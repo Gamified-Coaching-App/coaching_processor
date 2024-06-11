@@ -69,5 +69,5 @@ jobs:
           --template-file infrastructure/template.yaml \
           --stack-name CoachingProcessorStack \
           --capabilities CAPABILITY_NAMED_IAM \
-          --parameter-overrides DockerImageTag=ghcr.io/gamified-coaching-app/coaching_processor:v1.0
+          --parameter-overrides CoachingDockerImageTag=ghcr.io/gamified-coaching-app/coaching_processor:v1.0
           --no-fail-on-empty-changeset
