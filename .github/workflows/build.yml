@@ -68,7 +68,7 @@ jobs:
         set -e
         aws cloudformation deploy \
           --template-file infrastructure/template.yaml \
-          --stack-name TrainingsProcessorStack \
+          --stack-name CoachingProcessorStack \
           --capabilities CAPABILITY_NAMED_IAM \
           --parameter-overrides DockerImageTag=${{ env.IMAGE_TAG }}
           --no-fail-on-empty-changeset 
