@@ -70,5 +70,5 @@ jobs:
           --template-file infrastructure/template.yaml \
           --stack-name CoachingProcessorStack \
           --capabilities CAPABILITY_NAMED_IAM \
-          --parameter-overrides DockerImageTag=${{ env.IMAGE_TAG }}
+          --parameter-overrides CoachingDockerImageTag=${{ env.IMAGE_TAG }}
           --no-fail-on-empty-changeset 
