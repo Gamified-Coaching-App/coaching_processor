@@ -154,7 +154,7 @@ Resources:
         - !Ref PublicSubnetTwo
       SecurityGroups:
         - !Ref ECSInstanceSecurityGroup
-        - !Ref ExistingSecurityGroup
+        #- !Ref ExistingSecurityGroup
 
   ECSTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
