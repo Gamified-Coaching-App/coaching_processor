@@ -47,7 +47,7 @@ jobs:
         context: .  # Assumes the Dockerfile is in the root directory
         file: ./Dockerfile  
         push: true
-        tags: ghcr.io/gamified-coaching-app/training_processing_api:v1.0  # Replace with your org, repo, and tag
+        tags: ghcr.io/gamified-coaching-app/coaching_processor:v1.0  # Replace with your org, repo, and tag
   
   deploy_stack:
     needs: build_and_push
@@ -64,9 +64,10 @@ jobs:
   
     - name: Deploy CloudFormation Stack
       run: |
+        set -e
         aws cloudformation deploy \
           --template-file infrastructure/template.yaml \
-          --stack-name TrainingsProcessorStack \
+          --stack-name CoachingProcessorStack \
           --capabilities CAPABILITY_NAMED_IAM \
-          --parameter-overrides DockerImageTag=ghcr.io/gamified-coaching-app/training_processing_api:v1.0
+          --parameter-overrides DockerImageTag=ghcr.io/gamified-coaching-app/coaching_processor:v1.0
           --no-fail-on-empty-changeset
