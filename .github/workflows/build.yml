@@ -1,0 +1,72 @@
+name: Build and Push Docker Image to GHCR
+
+on:
+  push:
+    branches:
+      - main  # Set to your default branch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  build_and_push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write  # Required for GITHUB_TOKEN authentication
+
+    steps:
+    - name: Check Out Repo
+      uses: actions/checkout@v2
+      
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: GabrielOppermann
+        password: ${{ secrets.DOCKER_PAT }}
+
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v2
+      with:
+        context: .  # Assumes the Dockerfile is in the root directory
+        file: ./Dockerfile  
+        push: true
+        tags: ghcr.io/gamified-coaching-app/training_processing_api:v1.0  # Replace with your org, repo, and tag
+  
+  deploy_stack:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check Out Repo
+      uses: actions/checkout@v2
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-2 
+  
+    - name: Deploy CloudFormation Stack
+      run: |
+        aws cloudformation deploy \
+          --template-file infrastructure/template.yaml \
+          --stack-name TrainingsProcessorStack \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --parameter-overrides DockerImageTag=ghcr.io/gamified-coaching-app/training_processing_api:v1.0
+          --no-fail-on-empty-changeset
