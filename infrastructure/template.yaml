@@ -7,12 +7,12 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
 
-Resources:
   ExistingSecurityGroup:
     Description: The existing security group ID for the Load Balancer.
     Type: String
     Default: sg-0d07c53e841cccbd8
 
+Resources:
   DockerImageTag:
     Description: Docker image tag to deploy
     Type: String
