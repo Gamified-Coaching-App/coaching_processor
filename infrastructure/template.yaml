@@ -1,18 +1,23 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template to deploy Docker container in ECS using EC2 instances and VPC, with HTTPS support.
+Description: CloudFormation template to deploy Docker container in ECS using EC2 instances and VPC, with HTTP support.
 
 Parameters:
-  ExistingSecurityGroup:
-    Description: The existing security group ID for the Load Balancer.
-    Type: String
-    Default: sg-0d07c53e841cccbd8
-
   LatestAmiId:
     Description: The latest AMI ID for ECS-optimized Amazon Linux 2.
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
 
 Resources:
+  ExistingSecurityGroup:
+    Description: The existing security group ID for the Load Balancer.
+    Type: String
+    Default: sg-0d07c53e841cccbd8
+
+  DockerImageTag:
+    Description: Docker image tag to deploy
+    Type: String
+    Default: 'latest'
+
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -71,8 +76,6 @@ Resources:
 
   ECSCluster:
     Type: AWS::ECS::Cluster
-    Properties:
-      ClusterName: CoachingProcessorCluster
 
   EC2InstanceRole:
     Type: AWS::IAM::Role
@@ -87,7 +90,7 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
-
+       
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -98,12 +101,12 @@ Resources:
   ECSInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTPS and SSH access to ECS instances
+      GroupDescription: Allow HTTP and SSH access to ECS instances
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
+          FromPort: 80
+          ToPort: 80
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: 22
@@ -128,7 +131,6 @@ Resources:
             echo ECS_ENABLE_TASK_IAM_ROLE=true >> /etc/ecs/ecs.config
             echo ECS_ENABLE_TASK_IAM_ROLE_NETWORK_HOST=true >> /etc/ecs/ecs.config
 
-
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -150,8 +152,8 @@ Resources:
         - !Ref PublicSubnetOne
         - !Ref PublicSubnetTwo
       SecurityGroups:
-        - !Ref ExistingSecurityGroup
         - !Ref ECSInstanceSecurityGroup
+        - !Ref ExistingSecurityGroup
 
   ECSTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -168,7 +170,7 @@ Resources:
       HealthyThresholdCount: 3
       UnhealthyThresholdCount: 2
 
-  HTTPSListener:
+  HTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     DependsOn:
       - LoadBalancer
@@ -178,23 +180,21 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref ECSTargetGroup
       LoadBalancerArn: !Ref LoadBalancer
-      Port: 443
-      Protocol: HTTPS
-      Certificates:
-        - CertificateArn: "arn:aws:acm:eu-west-2:590183778243:certificate/14647f6d-bd8f-44cf-ad49-fe24ac123ab4"
+      Port: 80
+      Protocol: HTTP
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: training-processing-task
+      Family: coaching-processing-task
       Cpu: 256
       Memory: 512
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - EC2
       ContainerDefinitions:
-        - Name: training-processing-container
-          Image: ghcr.io/gamified-coaching-app/training_processing_api:v1.0
+        - Name: coaching-processing-container
+          Image: !Ref DockerImageTag
           Essential: true
           PortMappings:
             - ContainerPort: 80
@@ -202,7 +202,7 @@ Resources:
 
   ECSService:
     Type: AWS::ECS::Service
-    DependsOn: HTTPSListener
+    DependsOn: HTTPListener
     Properties:
       Cluster: !Ref ECSCluster
       DesiredCount: 1
@@ -214,6 +214,6 @@ Resources:
             - !Ref PublicSubnetOne
             - !Ref PublicSubnetTwo
       LoadBalancers:
-        - ContainerName: training-processing-container
+        - ContainerName: coaching-processor-container
           ContainerPort: 80
           TargetGroupArn: !Ref ECSTargetGroup
