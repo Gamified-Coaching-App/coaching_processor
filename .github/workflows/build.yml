@@ -71,4 +71,4 @@ jobs:
           --stack-name CoachingProcessorStack \
           --capabilities CAPABILITY_NAMED_IAM \
           --parameter-overrides CoachingDockerImageTag=${{ env.IMAGE_TAG }}
-          --no-fail-on-empty-changeset 
+          --no-fail-on-empty-changeset

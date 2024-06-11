@@ -1,3 +1,5 @@
+# REQUIRED: ADD 'DEFAULT' IN SECURITY GROUP INGRESS
+
 AWSTemplateFormatVersion: '2010-09-09'
 Description: CloudFormation template to deploy Docker container in ECS using EC2 instances and VPC, with HTTP support.
 
