@@ -11,12 +11,13 @@ Parameters:
     Description: The existing security group ID for the Load Balancer.
     Type: String
     Default: sg-0d07c53e841cccbd8
-
-Resources:
+  
   DockerImageTag:
     Description: Docker image tag to deploy
     Type: String
     Default: 'latest'
+
+Resources:
 
   VPC:
     Type: AWS::EC2::VPC
