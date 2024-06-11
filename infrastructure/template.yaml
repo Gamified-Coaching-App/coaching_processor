@@ -2,83 +2,84 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: CloudFormation template to deploy Docker container in ECS using EC2 instances and VPC, with HTTP support.
 
 Parameters:
-  LatestAmiId:
+  CoachingLatestAmiId:
     Description: The latest AMI ID for ECS-optimized Amazon Linux 2.
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id
 
-  ExistingSecurityGroup:
+  CoachingExistingSecurityGroup:
     Description: The existing security group ID for the Load Balancer.
     Type: String
     Default: sg-0d07c53e841cccbd8
   
-  DockerImageTag:
+  CoachingDockerImageTag:
     Description: Docker image tag to deploy
     Type: String
     Default: 'latest'
 
 Resources:
-
-  VPC:
+  CoachingVPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
       EnableDnsSupport: true
       EnableDnsHostnames: true
 
-  PublicSubnetOne:
+  CoachingPublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref CoachingVPC
       CidrBlock: 10.0.1.0/24
       AvailabilityZone: !Select [0, !GetAZs '']
       MapPublicIpOnLaunch: true
 
-  PublicSubnetTwo:
+  CoachingPublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref CoachingVPC
       CidrBlock: 10.0.2.0/24
       AvailabilityZone: !Select [1, !GetAZs '']
       MapPublicIpOnLaunch: true
 
-  InternetGateway:
+  CoachingInternetGateway:
     Type: AWS::EC2::InternetGateway
 
-  VPCGatewayAttachment:
+  CoachingVPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcId: !Ref VPC
-      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref CoachingVPC
+      InternetGatewayId: !Ref CoachingInternetGateway
 
-  PublicRouteTable:
+  CoachingPublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref CoachingVPC
 
-  PublicRoute:
+  CoachingPublicRoute:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref PublicRouteTable
+      RouteTableId: !Ref CoachingPublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
+      GatewayId: !Ref CoachingInternetGateway
 
-  SubnetRouteTableAssociationOne:
+  CoachingSubnetRouteTableAssociationOne:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PublicSubnetOne
-      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref CoachingPublicSubnetOne
+      RouteTableId: !Ref CoachingPublicRouteTable
 
-  SubnetRouteTableAssociationTwo:
+  CoachingSubnetRouteTableAssociationTwo:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PublicSubnetTwo
-      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref CoachingPublicSubnetTwo
+      RouteTableId: !Ref CoachingPublicRouteTable
 
-  ECSCluster:
+  CoachingECSCluster:
     Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: CoachingProcessorCluster
 
-  EC2InstanceRole:
+  CoachingEC2InstanceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -92,18 +93,18 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
        
-  EC2InstanceProfile:
+  CoachingEC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
       Roles:
-        - Ref: EC2InstanceRole
+        - Ref: CoachingEC2InstanceRole
 
-  ECSInstanceSecurityGroup:
+  CoachingECSInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allow HTTP and SSH access to ECS instances
-      VpcId: !Ref VPC
+      VpcId: !Ref CoachingVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -114,54 +115,53 @@ Resources:
           ToPort: 22
           CidrIp: 0.0.0.0/0
 
-  EC2LaunchTemplate:
+  CoachingEC2LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      LaunchTemplateName: ECSLaunchTemplate
+      LaunchTemplateName: CoachingECSLaunchTemplate
       LaunchTemplateData:
         InstanceType: t2.micro
-        ImageId: !Ref LatestAmiId
+        ImageId: !Ref CoachingLatestAmiId
         IamInstanceProfile:
-          Arn: !GetAtt EC2InstanceProfile.Arn
+          Arn: !GetAtt CoachingEC2InstanceProfile.Arn
         SecurityGroupIds:
-          - !Ref ECSInstanceSecurityGroup
+          - !Ref CoachingECSInstanceSecurityGroup
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
-            echo ECS_CLUSTER=${ECSCluster} >> /etc/ecs/ecs.config
+            echo ECS_CLUSTER=${CoachingECSCluster} >> /etc/ecs/ecs.config
             echo ECS_ENABLE_TASK_IAM_ROLE=true >> /etc/ecs/ecs.config
             echo ECS_ENABLE_TASK_IAM_ROLE_NETWORK_HOST=true >> /etc/ecs/ecs.config
 
-  AutoScalingGroup:
+  CoachingAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       MinSize: 1
       MaxSize: 1
       DesiredCapacity: 1
       LaunchTemplate:
-        LaunchTemplateId: !Ref EC2LaunchTemplate
-        Version: !GetAtt EC2LaunchTemplate.LatestVersionNumber
+        LaunchTemplateId: !Ref CoachingEC2LaunchTemplate
+        Version: !GetAtt CoachingEC2LaunchTemplate.LatestVersionNumber
       VPCZoneIdentifier:
-        - !Ref PublicSubnetOne
-        - !Ref PublicSubnetTwo
+        - !Ref CoachingPublicSubnetOne
+        - !Ref CoachingPublicSubnetTwo
 
-  LoadBalancer:
+  CoachingLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Type: application
       Subnets:
-        - !Ref PublicSubnetOne
-        - !Ref PublicSubnetTwo
+        - !Ref CoachingPublicSubnetOne
+        - !Ref CoachingPublicSubnetTwo
       SecurityGroups:
-        - !Ref ECSInstanceSecurityGroup
-        #- !Ref ExistingSecurityGroup
+        - !Ref CoachingECSInstanceSecurityGroup
 
-  ECSTargetGroup:
+  CoachingECSTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Port: 80
       Protocol: HTTP
-      VpcId: !Ref VPC
+      VpcId: !Ref CoachingVPC
       TargetType: ip
       HealthCheckEnabled: true
       HealthCheckIntervalSeconds: 30
@@ -171,20 +171,20 @@ Resources:
       HealthyThresholdCount: 3
       UnhealthyThresholdCount: 2
 
-  HTTPListener:
+  CoachingHTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     DependsOn:
-      - LoadBalancer
-      - ECSTargetGroup
+      - CoachingLoadBalancer
+      - CoachingECSTargetGroup
     Properties:
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref ECSTargetGroup
-      LoadBalancerArn: !Ref LoadBalancer
+          TargetGroupArn: !Ref CoachingECSTargetGroup
+      LoadBalancerArn: !Ref CoachingLoadBalancer
       Port: 80
       Protocol: HTTP
 
-  TaskDefinition:
+  CoachingTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: coaching-processing-task
@@ -195,26 +195,26 @@ Resources:
         - EC2
       ContainerDefinitions:
         - Name: coaching-processing-container
-          Image: !Ref DockerImageTag
+          Image: !Ref CoachingDockerImageTag
           Essential: true
           PortMappings:
             - ContainerPort: 80
               HostPort: 80
 
-  ECSService:
+  CoachingECSService:
     Type: AWS::ECS::Service
-    DependsOn: HTTPListener
+    DependsOn: CoachingHTTPListener
     Properties:
-      Cluster: !Ref ECSCluster
+      Cluster: !Ref CoachingECSCluster
       DesiredCount: 1
-      TaskDefinition: !Ref TaskDefinition
+      TaskDefinition: !Ref CoachingTaskDefinition
       LaunchType: EC2
       NetworkConfiguration:
         AwsvpcConfiguration:
           Subnets:
-            - !Ref PublicSubnetOne
-            - !Ref PublicSubnetTwo
+            - !Ref CoachingPublicSubnetOne
+            - !Ref CoachingPublicSubnetTwo
       LoadBalancers:
-        - ContainerName: coaching-processor-container
+        - ContainerName: coaching-processing-container
           ContainerPort: 80
-          TargetGroupArn: !Ref ECSTargetGroup
+          TargetGroupArn: !Ref CoachingECSTargetGroup
