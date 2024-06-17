@@ -216,7 +216,7 @@ Resources:
           ContainerPort: 80
           TargetGroupArn: !Ref CoachingECSTargetGroup
   
-    DailyLogTable:
+  DailyLogTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: "coaching_daily_log"
