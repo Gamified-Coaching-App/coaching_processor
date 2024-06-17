@@ -230,6 +230,7 @@ Resources:
           KeyType: "HASH"
         - AttributeName: "timestampLocal"
           KeyType: "RANGE"
+      BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
@@ -244,9 +245,26 @@ Resources:
       KeySchema:
         - AttributeName: "userId"
           KeyType: "HASH"
+      BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+  
+  MeanStdvTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "coaching_mean_stdv"
+      AttributeDefinitions:
+        - AttributeName: "userId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "userId"
+          KeyType: "HASH"
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
 
   HealthTable:
     Type: AWS::DynamoDB::Table
@@ -262,6 +280,7 @@ Resources:
           KeyType: "HASH"
         - AttributeName: "timestampLocal"
           KeyType: "RANGE"
+      BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
@@ -276,6 +295,7 @@ Resources:
       KeySchema:
         - AttributeName: "userId"
           KeyType: "HASH"
+      BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
@@ -290,6 +310,7 @@ Resources:
       KeySchema:
         - AttributeName: "userId"
           KeyType: "HASH"
+      BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
@@ -304,6 +325,7 @@ Resources:
       KeySchema:
         - AttributeName: "userId"
           KeyType: "HASH"
+      BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
