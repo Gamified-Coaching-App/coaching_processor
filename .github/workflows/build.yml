@@ -6,53 +6,59 @@ on:
       - main  
 
 env:
-  IMAGE_TAG: ghcr.io/gamified-coaching-app/training_processing_api:v1.0
+  IMAGE_TAG: ghcr.io/gamified-coaching-app/coaching_processor:v1.0
 
 jobs:
-  # test:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
+  test:
+    runs-on: ubuntu-latest
+    services:
+      dynamodb:
+        image: amazon/dynamodb-local
+        ports:
+          - 8000:8000 
+          
+    steps:
+      - uses: actions/checkout@v2
 
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v2
-  #       with:
-  #         node-version: '20'
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
 
-  #     - name: Install dependencies
-  #       run: npm install
+      - name: Install dependencies
+        run: npm install
 
-  #     - name: Run tests
-  #       run: npm test
+      - name: Run tests
+        run: npm test
 
-  # build_and_push:
-  #   # needs: test
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     packages: write
-  #     id-token: write  # Required for GITHUB_TOKEN authentication
+  build_and_push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write  # Required for GITHUB_TOKEN authentication
 
-  #   steps:
-  #   - uses: actions/checkout@v2
+    steps:
+    - uses: actions/checkout@v2
       
-  #   - name: Log in to GitHub Container Registry
-  #     uses: docker/login-action@v1
-  #     with:
-  #       registry: ghcr.io
-  #       username: GabrielOppermann
-  #       password: ${{ secrets.DOCKER_PAT }}
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: GabrielOppermann
+        password: ${{ secrets.DOCKER_PAT }}
 
-  #   - name: Build and Push Docker Image
-  #     uses: docker/build-push-action@v2
-  #     with:
-  #       context: .
-  #       file: ./Dockerfile  
-  #       push: true
-  #       tags: ${{ env.IMAGE_TAG }}
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile  
+        push: true
+        tags: ${{ env.IMAGE_TAG }}
   
   deploy_stack:
-    #needs: build_and_push
+    needs: build_and_push
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

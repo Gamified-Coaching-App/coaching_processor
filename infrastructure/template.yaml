@@ -215,3 +215,95 @@ Resources:
         - ContainerName: coaching-processing-container
           ContainerPort: 80
           TargetGroupArn: !Ref CoachingECSTargetGroup
+  
+    DailyLogTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "coaching_daily_log"
+      AttributeDefinitions:
+        - AttributeName: "userId"
+          AttributeType: "S"
+        - AttributeName: "timestampLocal"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "userId"
+          KeyType: "HASH"
+        - AttributeName: "timestampLocal"
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  HeartRateZonesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "coaching_heart_rate_zones"
+      AttributeDefinitions:
+        - AttributeName: "userId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "userId"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  HealthTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "coaching_health"
+      AttributeDefinitions:
+        - AttributeName: "userId"
+          AttributeType: "S"
+        - AttributeName: "timestampLocal"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "userId"
+          KeyType: "HASH"
+        - AttributeName: "timestampLocal"
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  UserDataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "coaching_user_data"
+      AttributeDefinitions:
+        - AttributeName: "userId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "userId"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  LoadTargetsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "coaching_load_targets"
+      AttributeDefinitions:
+        - AttributeName: "userId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "userId"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  TrainingPlansTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "coaching_training_plans"
+      AttributeDefinitions:
+        - AttributeName: "userId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "userId"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
