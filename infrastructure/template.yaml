@@ -89,6 +89,14 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+      Policies:
+        - PolicyName: "DynamoDBFullAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "dynamodb:*"
+                Resource: "arn:aws:dynamodb:*:*:table/*"
        
   CoachingEC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -159,7 +167,7 @@ Resources:
       Port: 80
       Protocol: HTTP
       VpcId: !Ref CoachingVPC
-      TargetType: ip
+      TargetType: instance
       HealthCheckEnabled: true
       HealthCheckIntervalSeconds: 30
       HealthCheckPath: "/health"
@@ -187,7 +195,7 @@ Resources:
       Family: coaching-processing-task
       Cpu: 256
       Memory: 512
-      NetworkMode: awsvpc
+      NetworkMode: bridge
       RequiresCompatibilities:
         - EC2
       ContainerDefinitions:
@@ -207,10 +215,6 @@ Resources:
       TaskDefinition: !Ref CoachingTaskDefinition
       LaunchType: EC2
       NetworkConfiguration:
-        AwsvpcConfiguration:
-          Subnets:
-            - !Ref CoachingPublicSubnetOne
-            - !Ref CoachingPublicSubnetTwo
       LoadBalancers:
         - ContainerName: coaching-processing-container
           ContainerPort: 80
