@@ -214,7 +214,6 @@ Resources:
       DesiredCount: 1
       TaskDefinition: !Ref CoachingTaskDefinition
       LaunchType: EC2
-      NetworkConfiguration:
       LoadBalancers:
         - ContainerName: coaching-processing-container
           ContainerPort: 80
