@@ -28,7 +28,7 @@ jobs:
       - name: Run tests
         run: npm test
 
-  build_and_publish_image:
+  publish_docker_image:
     needs: unit_testing
     runs-on: ubuntu-latest
     permissions:
@@ -55,7 +55,7 @@ jobs:
         tags: ${{ env.IMAGE_TAG }}
   
   deploy_stack:
-    needs: build_and_publish_image
+    needs: publish_docker_image
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

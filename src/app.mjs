@@ -40,6 +40,26 @@ app.post('/workout', async (req, res) => {
     }
 });
 
+app.post('/subjparams', async (req, res) => {
+    // Immediately acknowledge the request
+    const { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess } = req.body;
+
+    if (!userId || !timestampLocal || !sessionId || perceivedExertion === undefined || perceivedRecovery === undefined || perceivedTrainingsSuccess === undefined) {
+        console.error("Error: Missing required fields in the request body");
+        res.status(400).send({ error: "Missing required fields in the request body" });
+        return;
+    }
+
+    res.status(200).send({ message: "Processing started" });
+
+    try {
+        await writeSubjectiveParamsToDb(dynamoDbClient, userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess);
+        console.log("Successfully updated subjective parameters");
+    } catch (error) {
+        console.error("Error writing workout to database:", error);
+    }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).send({ status: 'Healthy' });
