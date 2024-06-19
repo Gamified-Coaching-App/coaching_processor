@@ -230,7 +230,10 @@ Resources:
         - ContainerName: coaching-processing-container
           ContainerPort: 80
           TargetGroupArn: !Ref CoachingECSTargetGroup
-  
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+        MaximumPercent: 100
+        
   DailyLogTable:
     Type: AWS::DynamoDB::Table
     Properties:
