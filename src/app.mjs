@@ -27,17 +27,17 @@ app.post('/workout', async (req, res) => {
         
     }
 
-    let kmPerZone = null;
+    let kmPerHeartRateZone = null;
     if (req.body.activityType === "RUNNING") {
         try {
-            kmPerZone = getKmPerHeartRateZone(heartRateZones, heartRates, distances);
+            kmPerHeartRateZone = getKmPerHeartRateZone(heartRateZones, heartRates, distances);
         } catch (error) {
             console.error("Error calculating km per heart rate zone:", error);
             return;
         }
     }
     try {
-        await writeWorkoutToDb(dynamoDbClient, userId, sessionId, activityType, duration, kmPerZone);
+        await writeWorkoutToDb(dynamoDbClient, { userId : userId, timestampLocal : timestampLocal, activityType : activityType, sessionId : sessionId, duration : duration, kmPerHeartRateZone : kmPerHeartRateZone });
         console.log("Workout processed successfully");
     } catch (error) {
         console.error("Error writing workout to database:", error);

@@ -93,10 +93,15 @@ function getKmPerHeartRateZone(zones, heartRates, distances) {
     };
 }
 
-async function writeWorkoutToDb(dynamoDbclient, userId, timestampLocal, activityType, sessionId, duration = null, kmPerHeartRateZone = null) {
+async function writeWorkoutToDb(dynamoDbclient, params) {
+    console.log("Writing workout to database...");
+    const { userId, timestampLocal, activityType, sessionId, duration, kmPerHeartRateZone } = params
+
+    console.log("userId:", userId, "timestampLocal:", timestampLocal, "activityType:", activityType, "sessionId:", sessionId, "duration:", duration, "kmPerHeartRateZone:", kmPerHeartRateZone)
     const initUpdateExpression = "SET #exer = if_not_exists(#exer, :emptyMap), " +
                                  "#succ = if_not_exists(#succ, :emptyMap), " +
                                  "#rec = if_not_exists(#rec, :emptyMap)";
+                                 
     await dynamoDbclient.send(new UpdateItemCommand({
         TableName: "coaching_daily_log",
         Key: { "userId": { S: userId }, "timestampLocal": { S: timestampLocal } },
@@ -122,7 +127,7 @@ async function writeWorkoutToDb(dynamoDbclient, userId, timestampLocal, activity
         "#succ": "perceivedTrainingSuccess",
         "#rec": "perceivedRecovery",
         "#sid": sessionId,
-        "#ns": "numberSessions", 
+        "#ns": "numberSessions",
         "#in": "injured"
     };
     let expressionAttributeValues = { // Changed from const to let
@@ -131,8 +136,9 @@ async function writeWorkoutToDb(dynamoDbclient, userId, timestampLocal, activity
         ":false": { BOOL: false }
     };
 
-    switch (activityType) {
+    switch (activityType) { 
         case "RUNNING":
+            console.log("updating RUNNING session");
             updateExpression += ", #alt = if_not_exists(#alt, :zeroTime), #nss = if_not_exists(#nss, :zero), " +
                                 "#kt = if_not_exists(#kt, :zero) + :totalKm, #kz34 = if_not_exists(#kz34, :zero) + :kmZ3Z4, " +
                                 "#kz5 = if_not_exists(#kz5, :zero) + :kmZ5, #ks = if_not_exists(#ks, :zero) + :kmSprint";
@@ -153,7 +159,8 @@ async function writeWorkoutToDb(dynamoDbclient, userId, timestampLocal, activity
                 ":kmSprint": { N: (kmPerHeartRateZone.kmZone5 * 0.5).toString() }
             };
             break;
-        case "STRENGTH":
+        case "STRENGTH_CONDITIONING":
+            console.log("Updating STRENGTH_CONDITIONING session...");
             updateExpression += ", #nss = if_not_exists(#nss, :zero) + :inc, " +
                                 "#alt = if_not_exists(#alt, :zeroTime), " +
                                 "#kt = if_not_exists(#kt, :zero), #kz34 = if_not_exists(#kz34, :zero), " +
@@ -173,6 +180,7 @@ async function writeWorkoutToDb(dynamoDbclient, userId, timestampLocal, activity
             };
             break;
         case "OTHER":
+            console.log("Updating OTHER session...");
             // Fetch the current hoursAlternative value
             const currentData = await getCurrentAltActivityData(dynamoDbclient, userId, timestampLocal);
             const currentDuration = currentData.Item ? currentData.Item.hoursAlternative.S : "00:00:00";

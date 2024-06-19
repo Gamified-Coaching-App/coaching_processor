@@ -53,9 +53,9 @@ describe('DynamoDB Service Tests', () => {
     });
 
     test('writeWorkoutToDb: Running day increment succesfull', async () => {
-        const response = await writeWorkoutToDb(client, "1", "1", "RUNNING", "2", "01:00:00", {
-            kmZone1: 1, kmZone2: 1, kmZone3: 1, kmZone4: 1, kmZone5: 1
-        });
+        const response = await writeWorkoutToDb(client, {userId : "1", timestampLocal: "1", activityType : "RUNNING", sessionId: "2", duration : "01:00:00", kmPerHeartRateZone : {
+            kmZone1: 1, kmZone2: 1, kmZone3: 1, kmZone4: 1, kmZone5: 1 }});
+
         const scanParams = {
             TableName: "coaching_daily_log"
         };
@@ -85,9 +85,9 @@ describe('DynamoDB Service Tests', () => {
     });
 
     test('writeWorkoutToDb: Adding new day for RUNNING workout succesfull', async () => {
-        const response = await writeWorkoutToDb(client, "2", "1", "RUNNING", "1", "01:00:00", {
-            kmZone1: 1, kmZone2: 1, kmZone3: 1, kmZone4: 1, kmZone5: 1
-        });
+        const response = await writeWorkoutToDb(client, {userId : "2", timestampLocal: "1", activityType : "RUNNING", sessionId: "1", duration : "01:00:00", kmPerHeartRateZone : {
+            kmZone1: 1, kmZone2: 1, kmZone3: 1, kmZone4: 1, kmZone5: 1 }});
+        
         const scanParams = {
             TableName: "coaching_daily_log"
         };
@@ -130,8 +130,10 @@ describe('DynamoDB Service Tests', () => {
 
     });
 
-    test('writeWorkoutToDb: Adding STRENGTH workout succesfull', async () => {
-        const response = await writeWorkoutToDb(client, "2", "1", "STRENGTH", "3");
+    test('writeWorkoutToDb: Adding STRENGTH_CONDITIONING workout succesfull', async () => {
+        const response = await writeWorkoutToDb(client, {userId : "2", timestampLocal: "1", activityType : "STRENGTH_CONDITIONING", sessionId: "3"});
+        
+        // await writeWorkoutToDb(client, "2", "1", "STRENGTH", "3");
         const scanParams = {
             TableName: "coaching_daily_log"
         };
@@ -173,7 +175,9 @@ describe('DynamoDB Service Tests', () => {
 
     });
     test('writeWorkoutToDb: Adding OTHER workout succesfull', async () => {
-        const response = await writeWorkoutToDb(client, "1", "1", "OTHER", "4", "01:04:59");
+        const response = await writeWorkoutToDb(client, {userId : "1", timestampLocal: "1", activityType : "OTHER", sessionId: "4", duration : "01:04:59"});
+        
+        // await writeWorkoutToDb(client, "1", "1", "OTHER", "4", "01:04:59");
         const scanParams = {
             TableName: "coaching_daily_log"
         };
