@@ -45,7 +45,7 @@ app.post('/workout', async (req, res) => {
 
 app.post('/subjparams', async (req, res) => {
     const { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess } = req.body;
-
+    console.log("Received request body:", req.body);
     if (!userId || !timestampLocal || !sessionId || !perceivedExertion || !perceivedRecovery || !perceivedTrainingsSuccess) {
         console.error("Error: Missing required fields in the request body");
         res.status(400).send({ error: "Missing required fields in the request body" });
