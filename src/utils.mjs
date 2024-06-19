@@ -48,13 +48,13 @@ async function getHeartRateZones(dynamoDbClient, userId) {
     }
 }
 
-function getKmPerHeartRateZone(zones, heartRates, distances) {
+function getKmPerHeartRateZone(zones, parsedHeartRates, parsedDistances) {
     let kmZone1 = 0, kmZone2 = 0, kmZone3 = 0, kmZone4 = 0, kmZone5 = 0;
     console.log("Calculating km per heart rate zone...");
-    console.log("Heart rates:", heartRates);
-    console.log("Distances:", distances);
-    const parsedHeartRates = JSON.parse(heartRates.S);
-    const parsedDistances = JSON.parse(distances.S);
+    // console.log("Heart rates:", heartRates);
+    // console.log("Distances:", distances);
+    // const parsedHeartRates = JSON.parse(heartRates.S);
+    // const parsedDistances = JSON.parse(distances.S);
     console.log("Parsed heart rates:", parsedHeartRates);
     console.log("Parsed distances:", parsedDistances);
 

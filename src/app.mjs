@@ -1,6 +1,7 @@
 import express from 'express';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb  } from './utils.mjs';
+import { sienna } from 'color-name';
 
 const dynamoDbClient = new DynamoDBClient({ region: 'eu-west-2' }); 
 
@@ -56,7 +57,7 @@ app.post('/subjparams', async (req, res) => {
     res.status(200).send({ message: "Processing started" });
 
     try {
-        await writeSubjectiveParamsToDb(dynamoDbClient, { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess});
+        await writeSubjectiveParamsToDb(dynamoDbClient, { userId : userId, timestampLocal : timestampLocal, sessionId: sessionId, perceivedExertion : perceivedExertion, perceivedRecovery : perceivedRecovery, perceivedTrainingsSuccess : perceivedTrainingsSuccess});
         console.log("Successfully updated subjective parameters");
     } catch (error) {
         console.error("Error writing workout to database:", error);

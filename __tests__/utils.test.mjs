@@ -41,9 +41,9 @@ describe('DynamoDB Service Tests', () => {
             "20": 5000, 
             "30": 7000 
         };
-        const heartRatesS = { S: JSON.stringify(heartRates) };
-        const distancesS = { S: JSON.stringify(distances) };
-        const result = getKmPerHeartRateZone(zones, heartRatesS, distancesS);
+        // const heartRatesS = { S: JSON.stringify(heartRates) };
+        // const distancesS = { S: JSON.stringify(distances) };
+        const result = getKmPerHeartRateZone(zones, heartRates, distances);
         const expectedResults = {
             zone1: 1,    
             zone2: 2,    
