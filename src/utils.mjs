@@ -48,27 +48,23 @@ async function getHeartRateZones(dynamoDbClient, userId) {
     }
 }
 
-function getKmPerHeartRateZone(zones, parsedHeartRates, parsedDistances) {
+function getKmPerHeartRateZone(zones, heartRates, distances) {
     let kmZone1 = 0, kmZone2 = 0, kmZone3 = 0, kmZone4 = 0, kmZone5 = 0;
     console.log("Calculating km per heart rate zone...");
-    // console.log("Heart rates:", heartRates);
-    // console.log("Distances:", distances);
-    // const parsedHeartRates = JSON.parse(heartRates.S);
-    // const parsedDistances = JSON.parse(distances.S);
-    console.log("Parsed heart rates:", parsedHeartRates);
-    console.log("Parsed distances:", parsedDistances);
+    console.log("Parsed heart rates:", heartRates);
+    console.log("Parsed distances:", distances);
 
     // Get all time keys from the heartRates and distances, and sort them
-    const timeKeys = Object.keys(parsedHeartRates).concat(Object.keys(parsedDistances));
+    const timeKeys = Object.keys(heartRates).concat(Object.keys(distances));
     const uniqueTimeKeys = [...new Set(timeKeys)]; // Remove duplicates
     uniqueTimeKeys.sort((a, b) => parseInt(a) - parseInt(b)); // Sort keys as integers
     let previousTime = uniqueTimeKeys[0];
 
     // Iterate through sorted time keys
     for (const time of uniqueTimeKeys) {
-        const currentHeartRate = parsedHeartRates[time];
-        const currentDistance = parsedDistances[time];
-        const previousDistance = parsedDistances[previousTime] || 0;
+        const currentHeartRate = heartRates[time];
+        const currentDistance = distances[time];
+        const previousDistance = distances[previousTime] || 0;
         const distanceCovered = (currentDistance - previousDistance) / 1000; // Convert meters to km
 
         if (currentHeartRate !== undefined && currentDistance !== undefined) {
