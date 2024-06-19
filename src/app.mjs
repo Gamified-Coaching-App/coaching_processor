@@ -25,6 +25,7 @@ app.post('/workout', async (req, res) => {
         return;
         
     }
+    console.log("Heart rate zones fetched successfully: ", heartRateZones);
 
     let kmPerZone = null;
     if (req.body.activityType === "RUNNING") {

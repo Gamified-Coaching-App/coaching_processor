@@ -50,8 +50,13 @@ async function getHeartRateZones(dynamoDbClient, userId) {
 
 function getKmPerHeartRateZone(zones, heartRates, distances) {
     let kmZone1 = 0, kmZone2 = 0, kmZone3 = 0, kmZone4 = 0, kmZone5 = 0;
+    console.log("Calculating km per heart rate zone...");
+    console.log("Heart rates:", heartRates);
+    console.log("Distances:", distances);
     const parsedHeartRates = JSON.parse(heartRates.S);
     const parsedDistances = JSON.parse(distances.S);
+    console.log("Parsed heart rates:", parsedHeartRates);
+    console.log("Parsed distances:", parsedDistances);
 
     // Get all time keys from the heartRates and distances, and sort them
     const timeKeys = Object.keys(parsedHeartRates).concat(Object.keys(parsedDistances));
@@ -244,9 +249,8 @@ function addTimeStrings(time1, time2) {
     return `${format(hours)}:${format(minutes)}:${format(seconds)}`;
 }
 
-async function writeSubjectiveParamsToDb(dynamoDbClient, payload) {
-    const { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess } = payload;
-
+async function writeSubjectiveParamsToDb(dynamoDbClient, userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess) {
+    
     // Prepare the UpdateExpression and ExpressionAttributeValues
     let updateExpression = "set ";
     let expressionAttributeValues = {};
@@ -447,7 +451,6 @@ async function addBirthdayToDB(dynamoDbClient, userId, dateOfBirth) {
         console.error("Error adding birthday to DB:", error);
     }
 }
-
 
 async function get_user_id(user_id_garmin) {
     console.log("Getting user ID for Garmin user ID:", user_id_garmin);
