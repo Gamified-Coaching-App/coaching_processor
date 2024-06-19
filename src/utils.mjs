@@ -1,5 +1,6 @@
-import { GetItemCommand, UpdateItemCommand, BatchGetItemCommand, QueryCommand} from "@aws-sdk/client-dynamodb";
+import { GetItemCommand, UpdateItemCommand, BatchGetItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
 import dayjs from 'dayjs';
+import moment from 'moment';
 
 async function getHeartRateZones(dynamoDbClient, userId) {
     // Define the parameters for the GetItem operation
@@ -495,23 +496,104 @@ async function get_user_id(user_id_garmin) {
     });
 }
 
-async function prepareDailyLogsForInference(dynamoDbClient, userIds, startDate) {
-    const params = {
-        TableName: "coaching_daily_log",
-        KeyConditionExpression: "userId = :userId AND begins_with(timestampLocal, :date)",
-        ExpressionAttributeValues: {
-            ":userId": { S: userId },
-            ":date": { S: date }
-        }
-    };
+async function prepareDataForInference(dynamoDbClient, userIds, startDate) {
+    // Calculate endDate
+    const endDate = moment(startDate).subtract(21, 'days').format('YYYY-MM-DD');
+    console.log("Fetching data for the last 21 days, from", startDate, "to", endDate);
+    
+    const results = [];
 
-    try {
-        const data = await dynamoDbClient.send(new QueryCommand(params));
-        return data.Items;
-    } catch (error) {
-        console.error("Error fetching daily logs for inference:", error);
-        return [];
+    for (const userId of userIds) {
+        const params = {
+            TableName: "coaching_daily_log",
+            KeyConditionExpression: "userId = :userId AND timestampLocal BETWEEN :endDate AND :startDate",
+            ExpressionAttributeValues: {
+                ":userId": { S: userId },
+                ":endDate": { S: endDate },
+                ":startDate": { S: startDate }
+            }
+        };
+
+        try {
+            const data = await dynamoDbClient.send(new QueryCommand(params));
+            const items = data.Items || [];
+
+            const dateMap = {};
+
+            items.forEach(item => {
+                const date = item.timestampLocal.S;
+                dateMap[date] = fillDefaults({
+                    userId: item.userId.S,
+                    timestampLocal: item.timestampLocal.S,
+                    numberSessions: item.numberSessions?.N,
+                    kmTotal: item.kmTotal?.N,
+                    kmZ3Z4: item.kmZ3Z4?.N,
+                    kmZ5: item.kmZ5?.N,
+                    kmSprint: item.kmSprint?.N,
+                    hoursAlternative: item.hoursAlternative?.S,
+                    numberStrengthSessions: item.numberStrengthSessions?.N,
+                    perceivedTrainingSuccess: item.perceivedTrainingSuccess?.M,
+                    perceivedRecovery: item.perceivedRecovery?.M,
+                    perceivedExertion: item.perceivedExertion?.M,
+                    injured: item.injured?.BOOL
+                });
+            });
+
+            const userData = { userId, data: {} };
+            for (let i = 0; i < 21; i++) {
+                const date = moment(startDate).subtract(i, 'days').format('YYYY-MM-DD');
+                userData.data[`day${21 - i}`] = dateMap[date] || fillDefaults({ userId, timestampLocal: date });
+            }
+
+            results.push(userData);
+        } catch (error) {
+            console.error(`Error fetching data for user ${userId}:`, error);
+        }
     }
+
+    return results;
 }
 
-export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones };
+function roundToNearestHour(timeStr) {
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    return hours + (minutes >= 30 ? 1 : 0);
+}
+
+function averageNonNull(values, defaultValue = -0.1) {
+    const validValues = values.filter(v => v !== null && v !== undefined);
+    if (validValues.length === 0) return defaultValue;
+    const sum = validValues.reduce((acc, val) => acc + val, 0);
+    return sum / validValues.length;
+}
+
+function parseNumber(value) {
+    return value !== undefined ? parseFloat(value) : 0;
+}
+
+function parseMap(map) {
+    if (!map) return {};
+    return Object.keys(map).reduce((acc, key) => {
+        acc[key] = map[key].N !== undefined ? parseFloat(map[key].N) : null;
+        return acc;
+    }, {});
+}
+
+function fillDefaults(data) {
+    return {
+        userId: data.userId,
+        timestampLocal: data.timestampLocal,
+        numberSessions: parseNumber(data.numberSessions),
+        kmTotal: parseNumber(data.kmTotal),
+        kmZ3Z4: parseNumber(data.kmZ3Z4),
+        kmZ5: parseNumber(data.kmZ5),
+        kmSprint: parseNumber(data.kmSprint),
+        hoursAlternative: data.hoursAlternative ? roundToNearestHour(data.hoursAlternative) : 0,
+        numberStrengthSessions: parseNumber(data.numberStrengthSessions),
+        perceivedTrainingSuccess: averageNonNull(Object.values(parseMap(data.perceivedTrainingSuccess))),
+        perceivedRecovery: averageNonNull(Object.values(parseMap(data.perceivedRecovery))),
+        perceivedExertion: averageNonNull(Object.values(parseMap(data.perceivedExertion))),
+        injured: data.injured !== undefined ? data.injured : false
+    };
+}
+
+export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones, prepareDataForInference};

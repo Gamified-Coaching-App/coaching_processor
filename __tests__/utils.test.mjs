@@ -1,6 +1,8 @@
-import { setupDynamoDB, teardownDynamoDB, client, transformDynamoDBItem } from './setup.mjs';
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones} from '../src/utils.mjs';
+import { setupDynamoDB, teardownDynamoDB, client, transformDynamoDBItem , DAY_0 } from './setup.mjs';
+import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, prepareDataForInference} from '../src/utils.mjs';
 import { ScanCommand } from "@aws-sdk/client-dynamodb";
+import moment from 'moment';
+import { expect } from '@jest/globals';
 
 describe('DynamoDB Service Tests', () => {
     beforeAll(async () => {
@@ -55,7 +57,7 @@ describe('DynamoDB Service Tests', () => {
     });
 
     test('writeWorkoutToDb: Running day increment succesfull', async () => {
-        const response = await writeWorkoutToDb(client, {userId : "1", timestampLocal: "1", activityType : "RUNNING", sessionId: "2", duration : "01:00:00", kmPerHeartRateZone : {
+        const response = await writeWorkoutToDb(client, {userId : "1", timestampLocal: DAY_0, activityType : "RUNNING", sessionId: "2", duration : "01:00:00", kmPerHeartRateZone : {
             zone1: 1, zone2: 1, zone3: 1, zone4: 1, zone5: 1 }});
 
         const scanParams = {
@@ -68,7 +70,7 @@ describe('DynamoDB Service Tests', () => {
         // Define expected data structure for all items in the database
         const expectedItems = [{
             userId: "1",
-            timestampLocal: "1",
+            timestampLocal: DAY_0,
             numberSessions: 2,
             kmTotal: 7,
             kmZ3Z4: 2.5,
@@ -87,7 +89,7 @@ describe('DynamoDB Service Tests', () => {
     });
 
     test('writeWorkoutToDb: Adding new day for RUNNING workout succesfull', async () => {
-        const response = await writeWorkoutToDb(client, {userId : "2", timestampLocal: "1", activityType : "RUNNING", sessionId: "1", duration : "01:00:00", kmPerHeartRateZone : {
+        const response = await writeWorkoutToDb(client, {userId : "2", timestampLocal: DAY_0, activityType : "RUNNING", sessionId: "1", duration : "01:00:00", kmPerHeartRateZone : {
             zone1: 1, zone2: 1, zone3: 1, zone4: 1, zone5: 1 }});
         
         const scanParams = {
@@ -99,7 +101,7 @@ describe('DynamoDB Service Tests', () => {
 
         const expectedItems = [{
             userId: "1",
-            timestampLocal: "1",
+            timestampLocal: DAY_0,
             numberSessions: 2,
             kmTotal: 7,
             kmZ3Z4: 2.5,
@@ -113,7 +115,7 @@ describe('DynamoDB Service Tests', () => {
             injured: false},
             {
             userId: "2",
-            timestampLocal: "1",
+            timestampLocal: DAY_0,
             numberSessions: 1,
             kmTotal: 5,
             kmZ3Z4: 2,
@@ -133,7 +135,7 @@ describe('DynamoDB Service Tests', () => {
     });
 
     test('writeWorkoutToDb: Adding STRENGTH_CONDITIONING workout succesfull', async () => {
-        const response = await writeWorkoutToDb(client, {userId : "2", timestampLocal: "1", activityType : "STRENGTH_CONDITIONING", sessionId: "3"});
+        const response = await writeWorkoutToDb(client, {userId : "2", timestampLocal: DAY_0, activityType : "STRENGTH_CONDITIONING", sessionId: "3"});
         
         // await writeWorkoutToDb(client, "2", "1", "STRENGTH", "3");
         const scanParams = {
@@ -145,7 +147,7 @@ describe('DynamoDB Service Tests', () => {
 
         const expectedItems = [{
             userId: "1",
-            timestampLocal: "1",
+            timestampLocal: DAY_0,
             numberSessions: 2,
             kmTotal: 7,
             kmZ3Z4: 2.5,
@@ -159,7 +161,7 @@ describe('DynamoDB Service Tests', () => {
             injured: false},
             {
             userId: "2",
-            timestampLocal: "1",
+            timestampLocal: DAY_0,
             numberSessions: 2,
             kmTotal: 5,
             kmZ3Z4: 2,
@@ -177,7 +179,7 @@ describe('DynamoDB Service Tests', () => {
 
     });
     test('writeWorkoutToDb: Adding OTHER workout succesfull', async () => {
-        const response = await writeWorkoutToDb(client, {userId : "1", timestampLocal: "1", activityType : "OTHER", sessionId: "4", duration : "01:04:59"});
+        const response = await writeWorkoutToDb(client, {userId : "1", timestampLocal: DAY_0, activityType : "OTHER", sessionId: "4", duration : "01:04:59"});
         
         const scanParams = {
             TableName: "coaching_daily_log"
@@ -188,7 +190,7 @@ describe('DynamoDB Service Tests', () => {
 
         const expectedItems = [{
             userId: "1",
-            timestampLocal: "1",
+            timestampLocal: DAY_0,
             numberSessions: 3,
             kmTotal: 7,
             kmZ3Z4: 2.5,
@@ -202,7 +204,7 @@ describe('DynamoDB Service Tests', () => {
             injured: false},
             {
             userId: "2",
-            timestampLocal: "1",
+            timestampLocal: DAY_0,
             numberSessions: 2,
             kmTotal: 5,
             kmZ3Z4: 2,
@@ -221,7 +223,7 @@ describe('DynamoDB Service Tests', () => {
     });
 
     test('writeSubjectiveParamsToDb: Adding params to DB succesfull', async () => {
-        const response = await writeSubjectiveParamsToDb(client, { userId : 1, timestampLocal : 1, sessionId : 1, perceivedExertion : 0.1 , perceivedRecovery : 0.5, perceivedTrainingsSuccess : 0.8 });
+        const response = await writeSubjectiveParamsToDb(client, { userId : "1", timestampLocal : DAY_0, sessionId : "1", perceivedExertion : 0.1 , perceivedRecovery : 0.5, perceivedTrainingsSuccess : 0.8 });
         const scanParams = {
             TableName: "coaching_daily_log"
         };
@@ -231,7 +233,7 @@ describe('DynamoDB Service Tests', () => {
 
         const expectedItems = [{
             userId: "1",
-            timestampLocal: "1",
+            timestampLocal: DAY_0,
             numberSessions: 3,
             kmTotal: 7,
             kmZ3Z4: 2.5,
@@ -245,7 +247,7 @@ describe('DynamoDB Service Tests', () => {
             injured: false},
             {
             userId: "2",
-            timestampLocal: "1",
+            timestampLocal: DAY_0,
             numberSessions: 2,
             kmTotal: 5,
             kmZ3Z4: 2,
@@ -340,4 +342,88 @@ describe('DynamoDB Service Tests', () => {
         expect(dbItems).toEqual(expectedDbItems);
     });
 
+    test('prepareDataForInference: successful for all users', async () => {
+        const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
+        const result = await prepareDataForInference(client, ["1", "2"], day1 );
+    
+        console.log(JSON.stringify(result, null, 2));
+
+        // Check if the object has 2 UserIDs with 21 consecutive days
+    expect(result).toHaveLength(2);
+    result.forEach(user => {
+        expect(Object.keys(user.data)).toHaveLength(21);
+        for (let i = 1; i <= 21; i++) {
+            expect(user.data).toHaveProperty(`day${i}`);
+        }
+    });
+
+    // Check if day20 for both users contains the expected hardcoded data
+    const expectedDay20User1 = {
+        userId: '1',
+        timestampLocal: '2024-06-18',
+        numberSessions: 3,
+        kmTotal: 7,
+        kmZ3Z4: 2.5,
+        kmZ5: 1.5,
+        kmSprint: 1,
+        hoursAlternative: 2,
+        numberStrengthSessions: 1,
+        perceivedTrainingSuccess: 0.8,
+        perceivedRecovery: 0.5,
+        perceivedExertion: 0.1,
+        injured: false
+    };
+    const expectedDay20User2 = {
+        userId: '2',
+        timestampLocal: '2024-06-18',
+        numberSessions: 2,
+        kmTotal: 5,
+        kmZ3Z4: 2,
+        kmZ5: 1,
+        kmSprint: 0.5,
+        hoursAlternative: 0,
+        numberStrengthSessions: 1,
+        perceivedTrainingSuccess: -0.1,
+        perceivedRecovery: -0.1,
+        perceivedExertion: -0.1,
+        injured: false
+    };
+
+    expect(result[0].data.day20).toEqual(expectedDay20User1);
+    expect(result[1].data.day20).toEqual(expectedDay20User2);
+
+    // Check if all other days for both users have the default values
+    const defaultDay = {
+        numberSessions: 0,
+        kmTotal: 0,
+        kmZ3Z4: 0,
+        kmZ5: 0,
+        kmSprint: 0,
+        hoursAlternative: 0,
+        numberStrengthSessions: 0,
+        perceivedTrainingSuccess: -0.1,
+        perceivedRecovery: -0.1,
+        perceivedExertion: -0.1,
+        injured: false
+    };
+
+    result.forEach(user => {
+        for (let i = 1; i <= 21; i++) {
+            if (i !== 20) {
+                const dayData = user.data[`day${i}`];
+                expect(dayData.numberSessions).toEqual(defaultDay.numberSessions);
+                expect(dayData.kmTotal).toEqual(defaultDay.kmTotal);
+                expect(dayData.kmZ3Z4).toEqual(defaultDay.kmZ3Z4);
+                expect(dayData.kmZ5).toEqual(defaultDay.kmZ5);
+                expect(dayData.kmSprint).toEqual(defaultDay.kmSprint);
+                expect(dayData.hoursAlternative).toEqual(defaultDay.hoursAlternative);
+                expect(dayData.numberStrengthSessions).toEqual(defaultDay.numberStrengthSessions);
+                expect(dayData.perceivedTrainingSuccess).toEqual(defaultDay.perceivedTrainingSuccess);
+                expect(dayData.perceivedRecovery).toEqual(defaultDay.perceivedRecovery);
+                expect(dayData.perceivedExertion).toEqual(defaultDay.perceivedExertion);
+                expect(dayData.injured).toEqual(defaultDay.injured);
+            }
+        }
+    });
+    });
 });

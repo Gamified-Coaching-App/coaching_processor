@@ -1,4 +1,7 @@
 import { DynamoDBClient, CreateTableCommand, PutItemCommand, BatchWriteItemCommand, DeleteTableCommand } from "@aws-sdk/client-dynamodb";
+import moment from 'moment';
+
+export const DAY_0 = moment().subtract(1, 'days').format('YYYY-MM-DD');
 
 export const client = new DynamoDBClient({
     endpoint: "http://localhost:8000",
@@ -148,7 +151,7 @@ export async function setupDynamoDB() {
      // Insert initial user data
      const item = {
         userId: { S: "1" },
-        timestampLocal: { S: "1" },
+        timestampLocal: { S: DAY_0},
         numberSessions: { N: "1" },
         kmTotal: { N: "2" },
         kmZ3Z4: { N: "0.5" },
