@@ -7,6 +7,9 @@ on:
 
 env:
   IMAGE_TAG: ghcr.io/gamified-coaching-app/coaching_processor:v1.0
+  IMAGE_TAGE_NAME: CoachingDockerImageTag
+  CLUSTER_NAME: CoachingProcessorCluster
+  STACK_NAME: CoachingProcessorStack
 
 jobs:
   test:
@@ -68,7 +71,40 @@ jobs:
         set -e
         aws cloudformation deploy \
           --template-file infrastructure/template.yaml \
-          --stack-name CoachingProcessorStack \
+          --stack-name ${{ env.STACK_NAME }} \
           --capabilities CAPABILITY_NAMED_IAM \
-          --parameter-overrides CoachingDockerImageTag=${{ env.IMAGE_TAG }}
-          --no-fail-on-empty-changeset
+          --parameter-overrides ${{ env.IMAGE_TAGE_NAME }}=${{ env.IMAGE_TAG }} \
+          --no-fail-on-empty-changeset \
+          --region eu-west-2 \
+          --debug
+      
+    - name: Check CloudFormation Outputs
+      run: |
+        aws cloudformation describe-stacks \
+          --stack-name ${{ env.STACK_NAME }} \
+          --query "Stacks[0].Outputs" \
+          --output json
+  
+    - name: Get ECS Service Name
+      id: get_ecs_service_name
+      run: |
+        ecs_service_name=$(aws ecs list-services \
+          --cluster ${{ env.CLUSTER_NAME }} \
+          --query "serviceArns[0]" \
+          --output text)
+        echo "ecs_service_name=${ecs_service_name##*/}" >> $GITHUB_ENV
+    
+    - name: Update ECS deployment
+      run: |
+        set -e
+        aws ecs update-service \
+          --cluster ${{ env.CLUSTER_NAME }} \
+          --service ${{ env.ecs_service_name }} \
+          --force-new-deployment
+      shell: /usr/bin/bash -e {0}
+      env:
+        IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        AWS_DEFAULT_REGION: eu-west-2
+        AWS_REGION: eu-west-2
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

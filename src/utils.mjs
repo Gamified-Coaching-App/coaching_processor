@@ -391,7 +391,6 @@ async function updateHeartRateZones(dynamoDbClient, userIds) {
         console.error("Failed during health zone update process:", error);
         return;
     }
-    console.log("Heart rate zones updated successfully.");
 }
     
 function computeHeartRateZones(maxHR) {
@@ -433,6 +432,20 @@ function buildExpressionAttributeValues(zones) {
         ":z5l": { N: String(zones.zone5Lower) },
         ":z5u": { N: String(zones.zone5Upper) }
     };
+}
+
+async function addBirthdayToDB(dynamoDbClient, userId, dateOfBirth) {
+    try {
+        await dynamoDbClient.send(new UpdateItemCommand({
+            TableName: "coaching_user_data",
+            Key: { "userId": { S: userId } },
+            UpdateExpression: "SET dateOfBirth = :dob",
+            ExpressionAttributeValues: { ":dob": { S: dateOfBirth } }
+        }));
+        console.log("Birthday added to DB for user", userId);
+    } catch (error) {
+        console.error("Error adding birthday to DB:", error);
+    }
 }
 
 
