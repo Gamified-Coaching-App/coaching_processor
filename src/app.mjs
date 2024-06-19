@@ -25,7 +25,6 @@ app.post('/workout', async (req, res) => {
         return;
         
     }
-    console.log("Heart rate zones fetched successfully: ", heartRateZones);
 
     let kmPerZone = null;
     if (req.body.activityType === "RUNNING") {
@@ -57,7 +56,7 @@ app.post('/subjparams', async (req, res) => {
     res.status(200).send({ message: "Processing started" });
 
     try {
-        await writeSubjectiveParamsToDb(dynamoDbClient, userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess);
+        await writeSubjectiveParamsToDb(dynamoDbClient, { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess});
         console.log("Successfully updated subjective parameters");
     } catch (error) {
         console.error("Error writing workout to database:", error);
