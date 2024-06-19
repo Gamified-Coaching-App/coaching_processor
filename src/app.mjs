@@ -12,6 +12,8 @@ app.post('/workout', async (req, res) => {
     // Immediately acknowledge the request
     res.status(200).send({ message: "Processing started" });
 
+    console.log("Request body:", req.body);
+
     let heartRateZones;
     try {
         // Asynchronously get user's heart rate zones from the database
