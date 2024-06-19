@@ -48,8 +48,10 @@ async function getHeartRateZones(dynamoDbClient, userId) {
     }
 }
 
-function getKmPerHeartRateZone(zones, heartRates, distances) {
+function getKmPerHeartRateZone(zones, heartRatesJson, distancesJson) {
     let kmZone1 = 0, kmZone2 = 0, kmZone3 = 0, kmZone4 = 0, kmZone5 = 0;
+    const heartRates = JSON.parse(heartRatesJson);
+    const distances = JSON.parse(distancesJson);  
     console.log("Calculating km per heart rate zone...");
     console.log("Parsed heart rates:", heartRates);
     console.log("Parsed distances:", distances);
@@ -62,9 +64,9 @@ function getKmPerHeartRateZone(zones, heartRates, distances) {
 
     // Iterate through sorted time keys
     for (const time of uniqueTimeKeys) {
-        const currentHeartRate = heartRates[time];
-        const currentDistance = distances[time];
-        const previousDistance = distances[previousTime] || 0;
+        const currentHeartRate = parseInt(heartRates[time], 10);
+        const currentDistance = parseInt(distances[time], 10);
+        const previousDistance = parseInt(distances[previousTime],10) || 0;
         const distanceCovered = (currentDistance - previousDistance) / 1000; // Convert meters to km
 
         if (currentHeartRate !== undefined && currentDistance !== undefined) {
@@ -83,14 +85,15 @@ function getKmPerHeartRateZone(zones, heartRates, distances) {
         }
         previousTime = time;
     }
-
-    return {
+    const kmPerHeartRateZone = {
         zone1: kmZone1,
         zone2: kmZone2,
         zone3: kmZone3,
         zone4: kmZone4,
         zone5: kmZone5
-    };
+    }
+    console.log("Calculated km per heart rate zone:", kmPerHeartRateZone);
+    return kmPerHeartRateZone;
 }
 
 async function writeWorkoutToDb(dynamoDbclient, params) {
@@ -101,7 +104,7 @@ async function writeWorkoutToDb(dynamoDbclient, params) {
     const initUpdateExpression = "SET #exer = if_not_exists(#exer, :emptyMap), " +
                                  "#succ = if_not_exists(#succ, :emptyMap), " +
                                  "#rec = if_not_exists(#rec, :emptyMap)";
-                                 
+
     await dynamoDbclient.send(new UpdateItemCommand({
         TableName: "coaching_daily_log",
         Key: { "userId": { S: userId }, "timestampLocal": { S: timestampLocal } },
@@ -153,10 +156,10 @@ async function writeWorkoutToDb(dynamoDbclient, params) {
             expressionAttributeValues = { ...expressionAttributeValues,
                 ":zeroTime": { S: "00:00:00" },
                 ":zero": { N: "0" },
-                ":totalKm": { N: (kmPerHeartRateZone.kmZone1 + kmPerHeartRateZone.kmZone2 + kmPerHeartRateZone.kmZone3 + kmPerHeartRateZone.kmZone4 + kmPerHeartRateZone.kmZone5).toString() },
-                ":kmZ3Z4": { N: (kmPerHeartRateZone.kmZone3 + kmPerHeartRateZone.kmZone4).toString() },
-                ":kmZ5": { N: kmPerHeartRateZone.kmZone5.toString() },
-                ":kmSprint": { N: (kmPerHeartRateZone.kmZone5 * 0.5).toString() }
+                ":totalKm": { N: (kmPerHeartRateZone.zone1 + kmPerHeartRateZone.zone2 + kmPerHeartRateZone.zone3 + kmPerHeartRateZone.zone4 + kmPerHeartRateZone.zone5).toString() },
+                ":kmZ3Z4": { N: (kmPerHeartRateZone.zone3 + kmPerHeartRateZone.zone4).toString() },
+                ":kmZ5": { N: kmPerHeartRateZone.zone5.toString() },
+                ":kmSprint": { N: (kmPerHeartRateZone.zone5 * 0.5).toString() }
             };
             break;
         case "STRENGTH_CONDITIONING":
@@ -183,8 +186,10 @@ async function writeWorkoutToDb(dynamoDbclient, params) {
             console.log("Updating OTHER session...");
             // Fetch the current hoursAlternative value
             const currentData = await getCurrentAltActivityData(dynamoDbclient, userId, timestampLocal);
-            const currentDuration = currentData.Item ? currentData.Item.hoursAlternative.S : "00:00:00";
-        
+            let currentDuration = "00:00:00";
+            if (currentData.Item && currentData.Item.hoursAlternative) {
+                currentDuration = currentData.Item.hoursAlternative.S;
+            }
             // Compute the new total duration if a duration is provided, else set to currentDuration
             const newDuration = duration ? addTimeStrings(currentDuration, duration) : currentDuration;
         

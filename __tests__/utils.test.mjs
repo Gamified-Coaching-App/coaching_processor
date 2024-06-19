@@ -41,7 +41,9 @@ describe('DynamoDB Service Tests', () => {
             "20": 5000, 
             "30": 7000 
         };
-        const result = getKmPerHeartRateZone(zones, heartRates, distances);
+        const heartRatesJson = JSON.stringify(heartRates);
+        const distancesJson = JSON.stringify(distances);
+        const result = getKmPerHeartRateZone(zones, heartRatesJson, distancesJson);
         const expectedResults = {
             zone1: 1,    
             zone2: 2,    
@@ -54,7 +56,7 @@ describe('DynamoDB Service Tests', () => {
 
     test('writeWorkoutToDb: Running day increment succesfull', async () => {
         const response = await writeWorkoutToDb(client, {userId : "1", timestampLocal: "1", activityType : "RUNNING", sessionId: "2", duration : "01:00:00", kmPerHeartRateZone : {
-            kmZone1: 1, kmZone2: 1, kmZone3: 1, kmZone4: 1, kmZone5: 1 }});
+            zone1: 1, zone2: 1, zone3: 1, zone4: 1, zone5: 1 }});
 
         const scanParams = {
             TableName: "coaching_daily_log"
@@ -86,7 +88,7 @@ describe('DynamoDB Service Tests', () => {
 
     test('writeWorkoutToDb: Adding new day for RUNNING workout succesfull', async () => {
         const response = await writeWorkoutToDb(client, {userId : "2", timestampLocal: "1", activityType : "RUNNING", sessionId: "1", duration : "01:00:00", kmPerHeartRateZone : {
-            kmZone1: 1, kmZone2: 1, kmZone3: 1, kmZone4: 1, kmZone5: 1 }});
+            zone1: 1, zone2: 1, zone3: 1, zone4: 1, zone5: 1 }});
         
         const scanParams = {
             TableName: "coaching_daily_log"
@@ -177,7 +179,6 @@ describe('DynamoDB Service Tests', () => {
     test('writeWorkoutToDb: Adding OTHER workout succesfull', async () => {
         const response = await writeWorkoutToDb(client, {userId : "1", timestampLocal: "1", activityType : "OTHER", sessionId: "4", duration : "01:04:59"});
         
-        // await writeWorkoutToDb(client, "1", "1", "OTHER", "4", "01:04:59");
         const scanParams = {
             TableName: "coaching_daily_log"
         };
