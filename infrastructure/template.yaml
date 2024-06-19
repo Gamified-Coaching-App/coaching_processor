@@ -188,9 +188,15 @@ Resources:
       LoadBalancerArn: !Ref CoachingLoadBalancer
       Port: 80
       Protocol: HTTP
+  
+  CoachingProcessorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: CoachingProcessor
 
   CoachingTaskDefinition:
     Type: AWS::ECS::TaskDefinition
+    DependsOn: CoachingProcessorLogGroup
     Properties:
       Family: coaching-processing-task
       Cpu: 256
@@ -205,7 +211,13 @@ Resources:
           PortMappings:
             - ContainerPort: 80
               HostPort: 80
-
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: CoachingProcessor  
+              awslogs-region: eu-west-2  # Use the region where your CloudWatch Logs group is located
+              awslogs-stream-prefix: ecs  # A prefix for the log stream name
+    
   CoachingECSService:
     Type: AWS::ECS::Service
     DependsOn: CoachingHTTPListener
