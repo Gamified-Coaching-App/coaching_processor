@@ -86,11 +86,11 @@ function getKmPerHeartRateZone(zones, heartRatesJson, distancesJson) {
         previousTime = time;
     }
     const kmPerHeartRateZone = {
-        zone1: kmZone1,
-        zone2: kmZone2,
-        zone3: kmZone3,
-        zone4: kmZone4,
-        zone5: kmZone5
+        zone1: parseFloat(kmZone1.toFixed(2)),
+        zone2: parseFloat(kmZone2.toFixed(2)),
+        zone3: parseFloat(kmZone3.toFixed(2)),
+        zone4: parseFloat(kmZone4.toFixed(2)),
+        zone5: parseFloat(kmZone5.toFixed(2))
     }
     console.log("Calculated km per heart rate zone:", kmPerHeartRateZone);
     return kmPerHeartRateZone;
@@ -493,6 +493,25 @@ async function get_user_id(user_id_garmin) {
             reject(e);
         });
     });
+}
+
+async function prepareDailyLogsForInference(dynamoDbClient, userIds, startDate) {
+    const params = {
+        TableName: "coaching_daily_log",
+        KeyConditionExpression: "userId = :userId AND begins_with(timestampLocal, :date)",
+        ExpressionAttributeValues: {
+            ":userId": { S: userId },
+            ":date": { S: date }
+        }
+    };
+
+    try {
+        const data = await dynamoDbClient.send(new QueryCommand(params));
+        return data.Items;
+    } catch (error) {
+        console.error("Error fetching daily logs for inference:", error);
+        return [];
+    }
 }
 
 export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones };
