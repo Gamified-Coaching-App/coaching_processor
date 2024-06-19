@@ -1,7 +1,6 @@
 import express from 'express';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb  } from './utils.mjs';
-import { sienna } from 'color-name';
 
 const dynamoDbClient = new DynamoDBClient({ region: 'eu-west-2' }); 
 
