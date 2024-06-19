@@ -44,16 +44,20 @@ app.post('/workout', async (req, res) => {
 });
 
 app.post('/subjparams', async (req, res) => {
-    const { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess } = req.body;
-    console.log("Received request body:", req.body);
-    if (!userId || !timestampLocal || !sessionId || !perceivedExertion || !perceivedRecovery || !perceivedTrainingsSuccess) {
-        console.error("Error: Missing required fields in the request body");
-        res.status(400).send({ error: "Missing required fields in the request body" });
+    const { userId, sessionId, timestampLocal, perceivedExertion, perceivedRecovery, perceivedTrainingSuccess } = req.body;
+    console.log("Starting insertion of subjective parameters with request body: ", 
+        "userId: ", userId, 
+        ", sessionId: ", sessionId, 
+        ", timestampLocal: ", timestampLocal, 
+        ", perceivedExertion: ", perceivedExertion, 
+        ", perceivedRecovery: ", perceivedRecovery, 
+        ", perceivedTrainingSuccess: ", perceivedTrainingSuccess);
+    if (!userId || !timestampLocal || !sessionId || 
+        perceivedExertion === undefined || perceivedRecovery === undefined || perceivedTrainingSuccess === undefined) { 
+        res.status(400).send({ message: "Missing required fields in request body" });
         return;
     }
-
     res.status(200).send({ message: "Processing started" });
-
     try {
         await writeSubjectiveParamsToDb(dynamoDbClient, { userId : userId, timestampLocal : timestampLocal, sessionId: sessionId, perceivedExertion : perceivedExertion, perceivedRecovery : perceivedRecovery, perceivedTrainingsSuccess : perceivedTrainingsSuccess});
         console.log("Successfully updated subjective parameters");
