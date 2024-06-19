@@ -9,9 +9,9 @@ app.use(express.json({ limit: '200mb' }));
 
 
 app.post('/workout', async (req, res) => {   
-    const { userId, sessionId, activityType, duration, heartRates, distances } = req.body;
+    const { userId, timestampLocal, sessionId, activityType, duration, heartRates, distances } = req.body;
   
-    if (!userId || !sessionId || !activityType || !duration || !heartRates || !distances) {
+    if (!userId || !sessionId || !timestampLocal || !activityType || !duration || !heartRates || !distances) {
         console.log("Got this incomplete request body:", req.body);
         return res.status(400).send({ error: "Missing required fields in the request body" });
     }
