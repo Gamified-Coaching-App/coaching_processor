@@ -1,6 +1,6 @@
 import express from 'express';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb  } from './utils.mjs';
+import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb } from './utils.mjs';
 
 const dynamoDbClient = new DynamoDBClient({ region: 'eu-west-2' }); 
 
