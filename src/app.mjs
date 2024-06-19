@@ -19,7 +19,6 @@ app.post('/workout', async (req, res) => {
 
     let heartRateZones;
     try {
-        // Asynchronously get user's heart rate zones from the database
         heartRateZones = await getHeartRateZones(dynamoDbClient, userId);
     } catch (error) {
         console.error("Error fetching heart rate zones:", error);
