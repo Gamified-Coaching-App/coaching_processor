@@ -260,7 +260,7 @@ function addTimeStrings(time1, time2) {
 }
 
 async function writeSubjectiveParamsToDb(dynamoDbClient, params) {
-    const { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess } = params;
+    const { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingSuccess } = params;
 
     console.log("Updating subjective parameters for user ", userId, " at ", timestampLocal, " for session ", sessionId, " with values: ", perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess)
     // Prepare the UpdateExpression and ExpressionAttributeValues
@@ -283,7 +283,7 @@ async function writeSubjectiveParamsToDb(dynamoDbClient, params) {
     // Append updates for perceivedTrainingSuccess if provided
     if (perceivedTrainingsSuccess !== undefined) {
         updateExpression += "perceivedTrainingSuccess.#sid = :pts, ";
-        expressionAttributeValues[":pts"] = { N: perceivedTrainingsSuccess.toString() };
+        expressionAttributeValues[":pts"] = { N: perceivedTrainingSuccess.toString() };
     }
 
     // Remove the trailing comma and space from the update expression

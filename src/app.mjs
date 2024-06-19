@@ -59,7 +59,7 @@ app.post('/subjparams', async (req, res) => {
     }
     res.status(200).send({ message: "Processing started" });
     try {
-        await writeSubjectiveParamsToDb(dynamoDbClient, { userId : userId, timestampLocal : timestampLocal, sessionId: sessionId, perceivedExertion : perceivedExertion, perceivedRecovery : perceivedRecovery, perceivedTrainingsSuccess : perceivedTrainingsSuccess});
+        await writeSubjectiveParamsToDb(dynamoDbClient, { userId : userId, timestampLocal : timestampLocal, sessionId: sessionId, perceivedExertion : perceivedExertion, perceivedRecovery : perceivedRecovery, perceivedTrainingSuccess : perceivedTrainingSuccess});
         console.log("Successfully updated subjective parameters");
     } catch (error) {
         console.error("Error writing workout to database:", error);
