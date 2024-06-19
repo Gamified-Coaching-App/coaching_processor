@@ -223,7 +223,7 @@ describe('DynamoDB Service Tests', () => {
     });
 
     test('writeSubjectiveParamsToDb: Adding params to DB succesfull', async () => {
-        const response = await writeSubjectiveParamsToDb(client, { userId : "1", timestampLocal : DAY_0, sessionId : "1", perceivedExertion : 0.1 , perceivedRecovery : 0.5, perceivedTrainingsSuccess : 0.8 });
+        const response = await writeSubjectiveParamsToDb(client, { userId : "1", timestampLocal : DAY_0, sessionId : "1", perceivedExertion : 0.1 , perceivedRecovery : 0.5, perceivedTrainingSuccess : 0.8 });
         const scanParams = {
             TableName: "coaching_daily_log"
         };

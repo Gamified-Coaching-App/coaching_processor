@@ -262,7 +262,7 @@ function addTimeStrings(time1, time2) {
 async function writeSubjectiveParamsToDb(dynamoDbClient, params) {
     const { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingSuccess } = params;
 
-    console.log("Updating subjective parameters for user ", userId, " at ", timestampLocal, " for session ", sessionId, " with values: ", perceivedExertion, perceivedRecovery, perceivedTrainingsSuccess)
+    console.log("Updating subjective parameters for user ", userId, " at ", timestampLocal, " for session ", sessionId, " with values: ", perceivedExertion, perceivedRecovery, perceivedTrainingSuccess)
     // Prepare the UpdateExpression and ExpressionAttributeValues
     let updateExpression = "set ";
     let expressionAttributeValues = {};
@@ -281,7 +281,7 @@ async function writeSubjectiveParamsToDb(dynamoDbClient, params) {
     }
 
     // Append updates for perceivedTrainingSuccess if provided
-    if (perceivedTrainingsSuccess !== undefined) {
+    if (perceivedTrainingSuccess !== undefined) {
         updateExpression += "perceivedTrainingSuccess.#sid = :pts, ";
         expressionAttributeValues[":pts"] = { N: perceivedTrainingSuccess.toString() };
     }
