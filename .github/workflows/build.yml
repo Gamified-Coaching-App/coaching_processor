@@ -12,7 +12,7 @@ env:
   STACK_NAME: CoachingProcessorStack
 
 jobs:
-  test:
+  unit_testing:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -28,8 +28,8 @@ jobs:
       - name: Run tests
         run: npm test
 
-  build_and_push:
-    needs: test
+  build_and_publish_image:
+    needs: unit_testing
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -55,7 +55,7 @@ jobs:
         tags: ${{ env.IMAGE_TAG }}
   
   deploy_stack:
-    needs: build_and_push
+    needs: build_and_publish_image
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -84,6 +84,18 @@ jobs:
           --stack-name ${{ env.STACK_NAME }} \
           --query "Stacks[0].Outputs" \
           --output json
+
+  deploy_container_on_ecs:
+    needs: deploy_stack
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-2 
   
     - name: Get ECS Service Name
       id: get_ecs_service_name
