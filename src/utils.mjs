@@ -1,4 +1,5 @@
 import { GetItemCommand, UpdateItemCommand, BatchGetItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
+import { marshall } from "@aws-sdk/util-dynamodb";
 import dayjs from 'dayjs';
 import moment from 'moment';
 
@@ -496,8 +497,9 @@ async function get_user_id(user_id_garmin) {
     });
 }
 
-async function prepareDataForInference(dynamoDbClient, userIds, startDate) {
+async function prepareDataForInference(dynamoDbClient, data = { userIds : [], startDate : null} ) {
     // Calculate endDate
+    const  { userIds, startDate } = data;
     const endDate = moment(startDate).subtract(21, 'days').format('YYYY-MM-DD');
     console.log("Fetching data for the last 21 days, from", startDate, "to", endDate);
     
@@ -596,4 +598,139 @@ function fillDefaults(data) {
     };
 }
 
-export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones, prepareDataForInference};
+async function getLoadTargetInference(data) {
+    console.log("Getting inference from load optimiser with data ...:");
+    console.log("data: ", data);
+    
+    // Get current timestamp
+    const timestampNow = moment().format('YYYY-MM-DD-HH-mm-ss');
+    console.log("inference time stamp now: ", timestampNow);
+
+    const inferenceResults = data.map(user => {
+        const userResults = {
+            userId: user.userId,
+            loadTargets: {}
+        };
+
+        for (let i = 1; i <= 7; i++) {
+            userResults.loadTargets[`day${i}`] = {
+                numberSession: 1,
+                totalKm: 5,
+                kmZ34: 1,
+                kmZ5: 1,
+                kmSprint: 0,
+                numberStrengthSessions: 0,
+                hoursAlternative: 0
+            };
+        }
+        return userResults;
+    });
+    return {
+        loadTargets: inferenceResults,
+        timestamp: timestampNow
+    };
+}
+
+async function insertLoadTargetsToDb(dynamoDbClient, { loadTargets, timestamp} ) {
+    const tableName = 'coaching_load_targets';
+    const dateDay1 = timestamp.slice(0, 10); // Extract the date part from the timestamp
+
+    const updatePromises = loadTargets.map(async (user) => {
+        const params = {
+            TableName: tableName,
+            Key: {
+                userId: { S: user.userId }
+            },
+            UpdateExpression: `SET 
+                day1 = :day1,
+                day2 = :day2,
+                day3 = :day3,
+                day4 = :day4,
+                day5 = :day5,
+                day6 = :day6,
+                day7 = :day7,
+                updatedTimestamp = :updatedTimestamp,
+                dateDay1 = :dateDay1`,
+            ExpressionAttributeValues: {
+                ':day1': { M: marshall(user.loadTargets.day1) },
+                ':day2': { M: marshall(user.loadTargets.day2) },
+                ':day3': { M: marshall(user.loadTargets.day3) },
+                ':day4': { M: marshall(user.loadTargets.day4) },
+                ':day5': { M: marshall(user.loadTargets.day5) },
+                ':day6': { M: marshall(user.loadTargets.day6) },
+                ':day7': { M: marshall(user.loadTargets.day7) },
+                ':updatedTimestamp': { S: timestamp },
+                ':dateDay1': { S: dateDay1 }
+            },
+            ReturnValues: 'UPDATED_NEW'
+        };
+
+        try {
+            await dynamoDbClient.send(new UpdateItemCommand(params));
+            console.log(`Successfully updated data for userId: ${user.userId}`);
+        } catch (error) {
+            console.error(`Error updating data for userId: ${user.userId}`, error);
+            throw error;
+        }
+    });
+
+    try {
+        await Promise.all(updatePromises);
+        console.log('All load targets updated successfully');
+    } catch (error) {
+        console.error('Error updating load targets', error);
+    }
+}
+
+async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp }) {
+    const tableName = 'coaching_training_plans';
+    const dateDay1 = timestamp.slice(0, 10); // Extract the date part from the timestamp
+  
+    const updatePromises = trainingPlans.map(async (userPlan) => {
+      const { userId, trainingPlan } = userPlan;
+  
+      const params = {
+        TableName: tableName,
+        Key: marshall({ userId }),
+        UpdateExpression: `SET 
+          day1 = :day1,
+          day2 = :day2,
+          day3 = :day3,
+          day4 = :day4,
+          day5 = :day5,
+          day6 = :day6,
+          day7 = :day7,
+          updatedTimestamp = :updatedTimestamp,
+          dateDay1 = :dateDay1`,
+        ExpressionAttributeValues: marshall({
+          ':day1': JSON.stringify(trainingPlan.day1),
+          ':day2': JSON.stringify(trainingPlan.day2),
+          ':day3': JSON.stringify(trainingPlan.day3),
+          ':day4': JSON.stringify(trainingPlan.day4),
+          ':day5': JSON.stringify(trainingPlan.day5),
+          ':day6': JSON.stringify(trainingPlan.day6),
+          ':day7': JSON.stringify(trainingPlan.day7),
+          ':updatedTimestamp': timestamp,
+          ':dateDay1': dateDay1
+        }),
+        ReturnValues: 'UPDATED_NEW'
+      };
+  
+      try {
+        await dynamoDbClient.send(new UpdateItemCommand(params));
+        console.log(`Successfully updated data for userId: ${userId}`);
+      } catch (error) {
+        console.error(`Error updating data for userId: ${userId}`, error);
+        throw error;
+      }
+    });
+  
+    try {
+      await Promise.all(updatePromises);
+      console.log('All training plans updated successfully');
+    } catch (error) {
+      console.error('Error updating training plans', error);
+    }
+  }
+
+export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones, prepareDataForInference, getLoadTargetInference, insertLoadTargetsToDb, insertTrainingPlansToDb};

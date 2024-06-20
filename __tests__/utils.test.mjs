@@ -1,8 +1,10 @@
 import { setupDynamoDB, teardownDynamoDB, client, transformDynamoDBItem , DAY_0 } from './setup.mjs';
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, prepareDataForInference} from '../src/utils.mjs';
+import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb} from '../src/utils.mjs';
+import { buildWorkouts } from '../src/workoutBuilder/workoutBuilder.mjs';
 import { ScanCommand } from "@aws-sdk/client-dynamodb";
 import moment from 'moment';
 import { expect } from '@jest/globals';
+import { load } from 'mime';
 
 describe('DynamoDB Service Tests', () => {
     beforeAll(async () => {
@@ -344,7 +346,7 @@ describe('DynamoDB Service Tests', () => {
 
     test('prepareDataForInference: successful for all users', async () => {
         const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
-        const result = await prepareDataForInference(client, ["1", "2"], day1 );
+        const result = await prepareDataForInference(client, {userIds :["1", "2"], startDate : day1} );
     
         console.log(JSON.stringify(result, null, 2));
 
@@ -360,7 +362,7 @@ describe('DynamoDB Service Tests', () => {
     // Check if day20 for both users contains the expected hardcoded data
     const expectedDay20User1 = {
         userId: '1',
-        timestampLocal: '2024-06-18',
+        timestampLocal: DAY_0,
         numberSessions: 3,
         kmTotal: 7,
         kmZ3Z4: 2.5,
@@ -375,7 +377,7 @@ describe('DynamoDB Service Tests', () => {
     };
     const expectedDay20User2 = {
         userId: '2',
-        timestampLocal: '2024-06-18',
+        timestampLocal: DAY_0,
         numberSessions: 2,
         kmTotal: 5,
         kmZ3Z4: 2,
@@ -425,5 +427,73 @@ describe('DynamoDB Service Tests', () => {
             }
         }
     });
+    });
+
+    test('getLoadTargetInference: successful for all users', async () => {
+        const users = ["1", "2"];
+        const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
+        const data = await prepareDataForInference(client, {userIds : users, startDate : day1 } );
+        const { loadTargets, timestamp } = await getLoadTargetInference(data);
+
+        console.log("got load target for timestamp ,", timestamp, "\"", JSON.stringify(loadTargets, null, 2));
+        await insertLoadTargetsToDb(client, { loadTargets, timestamp} );
+        expect(true).toEqual(true);
+    });
+
+    test('buildWorkouts: successful for all users', async () => {
+        const loadTargets = [
+            {
+              "userId": "1",
+              "loadTargets": {
+                "day1": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day2": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+              }
+            },
+            {
+              "userId": "2",
+              "loadTargets": {
+                "day1": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day2": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+              }
+            }
+          ];
+        const trainingPlans = buildWorkouts(loadTargets);
+        const timestamp = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
+        console.log('trainingPlans:\n', trainingPlans);
+        await insertTrainingPlansToDb(client, { trainingPlans, timestamp});
+
+        const expectedDayPlan = {
+            "running": {
+              "session_1": {
+                "warmup": { "Z2": 1.5 },
+                "main": {
+                  "interval_1": [
+                    { "Z5": 1 },
+                    { "Z2": 1 }
+                  ]
+                },
+                "cooldown": { "Z2": 1.5 }
+              }
+            },
+            "strength": 0,
+            "alternative": 0
+          };
+        trainingPlans.forEach(userPlan => {
+            for (let i = 1; i <= 7; i++) {
+              const dayKey = `day${i}`;
+              const dayPlan = userPlan.trainingPlan[dayKey];
+              expect(dayPlan).toEqual(expectedDayPlan);
+            }
+          });
     });
 });

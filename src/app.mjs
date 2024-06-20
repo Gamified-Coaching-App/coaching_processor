@@ -1,6 +1,8 @@
 import express from 'express';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb } from './utils.mjs';
+import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb} from './utils.mjs';
+import { buildWorkouts } from './workoutBuilder/workoutBuilder.mjs';
+import moment from 'moment';
 
 const dynamoDbClient = new DynamoDBClient({ region: 'eu-west-2' }); 
 
@@ -64,6 +66,35 @@ app.post('/subjparams', async (req, res) => {
     } catch (error) {
         console.error("Error writing workout to database:", error);
     }
+});
+
+app.post('/gettrainingplans', async (req, res) =>{
+    let userIds = req.body.userIds;
+
+    if (userIds === undefined) {
+        res.status(400).send({ message: "Missing userIds in request body" });
+        return;
+    }
+    if (!Array.isArray(userIds)) {
+        try {
+            userIds = JSON.parse(userIds);
+        } catch (e) {
+            res.status(400).send({ message: "userIds must be an array" });
+            return;
+        }
+    }
+    if (userIds.length === 0) {
+        res.status(400).send({ message: "userIds array is empty" });
+        return;
+    }
+    res.status(200).send({ message: "Processing started" });
+    const yesterdayTimestamp = moment().subtract(1, 'days').format('YYYY-MM-DD');
+    const data = await prepareDataForInference(dynamoDbClient, { userIds : userIds, startDate : yesterdayTimestamp });
+    const { loadTargets, timestamp } = await getLoadTargetInference(data);
+    console.log("Load targets: ", loadTargets);
+    const trainingPlans = buildWorkouts(loadTargets);
+    await insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp} );
+    await insertLoadTargetsToDb(dynamoDbClient, { loadTargets, timestamp } );
 });
 
 // Health check endpoint
