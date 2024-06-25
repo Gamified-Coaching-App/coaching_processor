@@ -380,36 +380,36 @@ Resources:
                 Resource: "*"
 
   # Lambda Function
-  # TriggerEcsEndpointFunction:
-  #   Type: AWS::Lambda::Function
-  #   FunctionName: coaching-processor-daily-trigger
-  #   DependsOn:
-  #     - LambdaExecutionRole
-  #     - CoachingProcessorLogGroup
-  #   Properties:
-  #     Handler: index.handler
-  #     Role: !GetAtt LambdaExecutionRole.Arn
-  #     Runtime: nodejs20.x
-  #     Timeout: 60
-  #     Code:
-  #       ZipFile: ""
+  TriggerEcsEndpointFunction:
+    Type: AWS::Lambda::Function
+    FunctionName: coaching-processor-daily-trigger
+    DependsOn:
+      - LambdaExecutionRole
+      - CoachingProcessorLogGroup
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: nodejs20.x
+      Timeout: 60
+      Code:
+        ZipFile: ""
 
   # EventBridge Rule
-  # DailyEventRule:
-  #   Type: AWS::Events::Rule
-  #   DependsOn: TriggerEcsEndpointFunction
-  #   Properties:
-  #     ScheduleExpression: cron(0 0 * * ? *)
-  #     Targets:
-  #       - Arn: !GetAtt TriggerEcsEndpointFunction.Arn
-  #         Id: "TriggerEcsEndpointFunction"
+  DailyEventRule:
+    Type: AWS::Events::Rule
+    DependsOn: TriggerEcsEndpointFunction
+    Properties:
+      ScheduleExpression: cron(0 0 * * ? *)
+      Targets:
+        - Arn: !GetAtt TriggerEcsEndpointFunction.Arn
+          Id: "TriggerEcsEndpointFunction"
 
   # Permission for EventBridge to invoke Lambda
-  # LambdaInvokePermission:
-  #   Type: AWS::Lambda::Permission
-  #   DependsOn: DailyEventRule
-  #   Properties:
-  #     FunctionName: !Ref TriggerEcsEndpointFunction
-  #     Action: lambda:InvokeFunction
-  #     Principal: events.amazonaws.com
-  #     SourceArn: !GetAtt DailyEventRule.Arn
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn: DailyEventRule
+    Properties:
+      FunctionName: !Ref TriggerEcsEndpointFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DailyEventRule.Arn
