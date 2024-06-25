@@ -391,20 +391,20 @@ Resources:
       - LambdaExecutionRole
       - CoachingProcessorLogGroup
     Properties:
-    FunctionName: !Ref CoachingDailyTriggerLambdaFunctionName
-    Handler: index.handler
-    Role: !GetAtt LambdaExecutionRole.Arn
-    Runtime: nodejs20.x
-    Timeout: 60
-    Code:
-      ZipFile: |
-        exports.handler = async (event) => {
-          console.log("Hello, World!");
-          return {
-            statusCode: 200,
-            body: JSON.stringify('Hello, World!'),
+      FunctionName: !Ref CoachingDailyTriggerLambdaFunctionName
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: nodejs20.x
+      Timeout: 60
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            console.log("Hello, World!");
+            return {
+              statusCode: 200,
+              body: JSON.stringify('Hello, World!'),
+            };
           };
-        };
 
   # EventBridge Rule
   DailyEventRule:
