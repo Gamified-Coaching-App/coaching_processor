@@ -155,7 +155,7 @@ jobs:
       - name: Get Lambda Function ARN
         id: get_lambda_arn
         run: |
-          lambda_arn=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --query 'Configuration.FunctionArn' --output text)
+          lambda_arn=$(aws lambda get-function --function-name ${{ env.COACHING_DAILY_TRIGGER_LAMBDA_FUNCTION_NAME }} --query 'Configuration.FunctionArn' --output text)
           echo "lambda_arn=${lambda_arn}" >> $GITHUB_ENV
 
       - name: Deploy to AWS Lambda
