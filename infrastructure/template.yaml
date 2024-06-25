@@ -347,3 +347,82 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+
+  # IAM Role for Lambda
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeInstances
+                  - ec2:AttachNetworkInterface
+                  - lambda:InvokeFunction
+                  - events:PutEvents
+                Resource: "*"
+
+  # Lambda Function
+  TriggerEcsEndpointFunction:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - LambdaExecutionRole
+      - CoachingProcessorLogGroup
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import requests
+
+          def handler(event, context):
+              url = "http://Coachi-Coach-bgtKlzJd2GCw-908383528.eu-west-2.elb.amazonaws.com/gettrainingplans"
+              payload = {"userIds": "all"}
+              headers = {'Content-Type': 'application/json'}
+              response = requests.post(url, data=json.dumps(payload), headers=headers)
+              print(f"Response Status Code: {response.status_code}")
+              print(f"Response Body: {response.text}")
+              return {
+                  'statusCode': response.status_code,
+                  'body': response.text
+              }
+      Runtime: python3.8
+      Timeout: 60
+
+  # EventBridge Rule
+  DailyEventRule:
+    Type: AWS::Events::Rule
+    DependsOn: TriggerEcsEndpointFunction
+    Properties:
+      ScheduleExpression: cron(0 0 * * ? *)
+      Targets:
+        - Arn: !GetAtt TriggerEcsEndpointFunction.Arn
+          Id: "TriggerEcsEndpointFunction"
+
+  # Permission for EventBridge to invoke Lambda
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn: DailyEventRule
+    Properties:
+      FunctionName: !Ref TriggerEcsEndpointFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DailyEventRule.Arn
