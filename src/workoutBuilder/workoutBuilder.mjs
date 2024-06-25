@@ -6,12 +6,18 @@ import { INTERVALS, DEFAULT_WARMUP_KM, DEFAULT_COOL_DOWN_KM } from './config.mjs
  * @param {Array} loadTargets - Array of objects, each containing userId and loadTargets for the week.
  * @returns {Array} workouts - Array of objects, each containing userId and the generated training plan.
  */
-export function buildWorkouts(loadTargets) {
+export function buildWorkouts(loadTargets, nonActiveUsers) {
     // Iterate through each load target and create a training plan
-    const workouts = loadTargets.map(user => ({
+    let workouts = [];
+    if (loadTargets !== null) {
+        workouts = loadTargets.map(user => ({
         userId: user.userId,
         trainingPlan: createTrainingPlanForUser(user.loadTargets)
-    }));
+        }));
+    }
+    if (nonActiveUsers !== null) {
+        const emptyPlans = nonActiveUsers.map(userId => createEmptyPlan(userId));
+        workouts = workouts.concat(emptyPlans);}
     return workouts;
 }
 
@@ -65,4 +71,21 @@ function createTrainingPlanForUser(suggestion) {
         trainingPlan[`day${i + 1}`] = dayPlan;
     }
     return trainingPlan;
+}
+
+function createEmptyPlan(userId) {
+    const trainingPlan = {};
+
+    for (let i = 1; i <= 7; i++) {
+        trainingPlan[`day${i}`] = {
+            running: 0,
+            strength: 0,
+            alternative: 0
+        };
+    }
+
+    return {
+        userId: userId,
+        trainingPlan: trainingPlan
+    };
 }

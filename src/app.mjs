@@ -1,6 +1,6 @@
 import express from 'express';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt , getTrainingPlan} from './utils.mjs';
+import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt , getTrainingPlan, getAllUsers } from './utils.mjs';
 import { buildWorkouts } from './workoutBuilder/workoutBuilder.mjs';
 import moment from 'moment';
 import cors from 'cors';
@@ -77,32 +77,43 @@ app.post('/subjparams', async (req, res) => {
 });
 
 app.post('/gettrainingplans', async (req, res) =>{
-    let userIds = req.body.userIds;
+    let activeUsers = req.body.userIds;
+    let nonActiveUsers = null;
 
-    if (userIds === undefined) {
+    if (activeUsers === undefined) {
         res.status(400).send({ message: "Missing userIds in request body" });
         return;
     }
-    if (!Array.isArray(userIds)) {
+    if (activeUsers === "all") {
+        const allUsers = await getAllUsers(dynamoDbClient);
+        activeUsers = allUsers.active;
+        nonActiveUsers = allUsers.nonActive;
+        console.log("Add training plans for active users: ", activeUsers);
+        console.log("Add training plans for non active users: ", nonActiveUsers);
+    }
+    if (!Array.isArray(activeUsers)) {
         try {
-            userIds = JSON.parse(userIds);
+            activeUsers = JSON.parse(userIds);
         } catch (e) {
             res.status(400).send({ message: "userIds must be an array" });
             return;
         }
     }
-    if (userIds.length === 0) {
-        res.status(400).send({ message: "userIds array is empty" });
-        return;
-    }
     res.status(200).send({ message: "Processing started" });
     const yesterdayTimestamp = moment().subtract(1, 'days').format('YYYY-MM-DD');
-    const data = await prepareDataForInference(dynamoDbClient, { userIds : userIds, startDate : yesterdayTimestamp });
-    const { loadTargets, timestamp } = await getLoadTargetInference(data);
-    console.log("Load targets: ", loadTargets);
-    const trainingPlans = buildWorkouts(loadTargets);
-    await insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp} );
-    await insertLoadTargetsToDb(dynamoDbClient, { loadTargets, timestamp } );
+    if (activeUsers.length !== 0) {
+        const data = await prepareDataForInference(dynamoDbClient, { userIds : activeUsers, startDate : yesterdayTimestamp });
+        const { loadTargets, timestamp } = await getLoadTargetInference(data);
+        console.log("Load targets: ", loadTargets);
+        const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
+        await insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp } );
+        await insertLoadTargetsToDb(dynamoDbClient, { loadTargets, timestamp } );
+    } else {
+        const loadTargets = null;
+        const timestamp = moment().format('YYYY-MM-DD-HH-mm-ss');
+        const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
+        await insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp } );
+    }  
 });
 
 app.options('/frontend', cors(corsOptions)); 

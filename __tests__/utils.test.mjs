@@ -467,10 +467,12 @@ describe('DynamoDB Service Tests', () => {
               }
             }
           ];
-        const trainingPlans = buildWorkouts(loadTargets);
+        const nonActiveUsers = null;
+        const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
         const timestamp = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
         console.log('trainingPlans:\n', trainingPlans);
-        await insertTrainingPlansToDb(client, { trainingPlans, timestamp});
+        
+        await insertTrainingPlansToDb(client, { trainingPlans, timestamp });
 
         const expectedDayPlan = {
             "running": {

@@ -1,4 +1,4 @@
-import { GetItemCommand, UpdateItemCommand, BatchGetItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
+import { GetItemCommand, UpdateItemCommand, BatchGetItemCommand, QueryCommand, ScanCommand} from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import dayjs from 'dayjs';
 import moment from 'moment';
@@ -758,36 +758,58 @@ async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestam
 
   function processTrainingPlan(items) {
     const baseDate = new Date(items.dateDay1.S);
-  const trainingPlan = {};
+    const trainingPlan = {};
 
-  for (let i = 1; i <= 7; i++) {
-    const dateKey = `day${i}`;
-    if (items[dateKey]) {
-      const dayPlan = JSON.parse(items[dateKey].S);
-      const currentDate = new Date(baseDate);
-      currentDate.setDate(baseDate.getDate() + (i - 1));
-      const formattedDate = currentDate.toISOString().split('T')[0];
+    for (let i = 1; i <= 7; i++) {
+        const dateKey = `day${i}`;
+        if (items[dateKey]) {
+            const dayPlan = JSON.parse(items[dateKey].S);
 
-      Object.entries(dayPlan).forEach(([activityType, sessions]) => {
-        if (activityType === 'running' && sessions) {
-          Object.entries(sessions).forEach(([sessionKey, sessionValue], index) => {
-            const timestampKey = `${formattedDate}_${index + 1}`;
-            trainingPlan[timestampKey] = {
-              type: 'RUNNING',
-              workout: sessionValue
-            };
-          });
-        } else if (activityType !== 'running' && sessions !== 0) {
-          const timestampKey = `${formattedDate}_${activityType.toUpperCase() === 'STRENGTH' ? 2 : 3}`; // Use 2 for STRENGTH, 3 for ALTERNATIVE
-          trainingPlan[timestampKey] = {
-            type: activityType.toUpperCase().replace(' ', '_'),
-            workout: true
-          };
+            // Check if all three parameters are 0
+            if (dayPlan.running === 0 && dayPlan.strength === 0 && dayPlan.alternative === 0) {
+                continue;
+            }
+
+            const currentDate = new Date(baseDate);
+            currentDate.setDate(baseDate.getDate() + (i - 1));
+            const formattedDate = currentDate.toISOString().split('T')[0];
+
+            let sessionCounter = 1;
+
+            // Process running sessions
+            if (dayPlan.running !== 0 && typeof dayPlan.running === 'object') {
+                Object.entries(dayPlan.running).forEach(([sessionKey, sessionValue]) => {
+                    const timestampKey = `${formattedDate}_${sessionCounter}`;
+                    trainingPlan[timestampKey] = {
+                        type: 'RUNNING',
+                        workout: sessionValue
+                    };
+                    sessionCounter++;
+                });
+            }
+
+            // Process strength sessions
+            if (dayPlan.strength !== 0) {
+                const timestampKey = `${formattedDate}_${sessionCounter}`;
+                trainingPlan[timestampKey] = {
+                    type: 'STRENGTH',
+                    workout: true
+                };
+                sessionCounter++;
+            }
+
+            // Process alternative sessions
+            if (dayPlan.alternative !== 0) {
+                const timestampKey = `${formattedDate}_${sessionCounter}`;
+                trainingPlan[timestampKey] = {
+                    type: 'ALTERNATIVE',
+                    workout: true
+                };
+                sessionCounter++;
+            }
         }
-      });
     }
-  }
-  return trainingPlan;
+    return trainingPlan;
 }
 
   function getUserIdFromJwt(token) {
@@ -795,4 +817,39 @@ async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestam
     return decoded.sub;
 }
 
-export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones, prepareDataForInference, getLoadTargetInference, insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt, getTrainingPlan};
+async function getAllUsers(dynamoDbClient) {
+    const params = {
+        TableName: "coaching_user_data"
+    };
+
+    try {
+        // Scan the table
+        const data = await dynamoDbClient.send(new ScanCommand(params));
+        
+        // Check if Items exist and are not empty
+        if (!data.Items || data.Items.length === 0) {
+            return { active: [], nonActive: [] };
+        }
+
+        const items = data.Items.map(item => unmarshall(item));
+
+        // Separate active and non-active user IDs
+        const activeUserIds = [];
+        const nonActiveUserIds = [];
+
+        items.forEach(item => {
+            if (item.coachingActive === true) {
+                activeUserIds.push(item.userId);
+            } else {
+                nonActiveUserIds.push(item.userId);
+            }
+        });
+
+        return { active: activeUserIds, nonActive: nonActiveUserIds };
+    } catch (err) {
+        console.error("Error scanning DynamoDB table:", err);
+        throw new Error("Error scanning DynamoDB table");
+    }
+}
+
+export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones, prepareDataForInference, getLoadTargetInference, insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt, getTrainingPlan, getAllUsers};
