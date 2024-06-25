@@ -1,6 +1,6 @@
 import express from 'express';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt , getTrainingPlan, getAllUsers } from './utils.mjs';
+import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, getContinousWorkoutData, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt , getTrainingPlan, getAllUsers } from './utils.mjs';
 import { buildWorkouts } from './workoutBuilder/workoutBuilder.mjs';
 import moment from 'moment';
 import cors from 'cors';
@@ -102,7 +102,7 @@ app.post('/gettrainingplans', async (req, res) =>{
     res.status(200).send({ message: "Processing started" });
     const yesterdayTimestamp = moment().subtract(1, 'days').format('YYYY-MM-DD');
     if (activeUsers.length !== 0) {
-        const data = await prepareDataForInference(dynamoDbClient, { userIds : activeUsers, startDate : yesterdayTimestamp });
+        const data = await getContinousWorkoutData(dynamoDbClient, { userIds : activeUsers, startDate : yesterdayTimestamp });
         const { loadTargets, timestamp } = await getLoadTargetInference(data);
         console.log("Load targets: ", loadTargets);
         const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);

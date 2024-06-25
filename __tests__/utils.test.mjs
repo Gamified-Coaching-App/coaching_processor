@@ -1,5 +1,5 @@
 import { setupDynamoDB, teardownDynamoDB, client, transformDynamoDBItem , DAY_0 } from './setup.mjs';
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getTrainingPlan} from '../src/utils.mjs';
+import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, getContinousWorkoutData, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getTrainingPlan} from '../src/utils.mjs';
 import { buildWorkouts } from '../src/workoutBuilder/workoutBuilder.mjs';
 import { ScanCommand } from "@aws-sdk/client-dynamodb";
 import moment from 'moment';
@@ -344,9 +344,9 @@ describe('DynamoDB Service Tests', () => {
         expect(dbItems).toEqual(expectedDbItems);
     });
 
-    test('prepareDataForInference: successful for all users', async () => {
+    test('getContinousWorkoutData: successful for all users', async () => {
         const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
-        const result = await prepareDataForInference(client, {userIds :["1", "2"], startDate : day1} );
+        const result = await getContinousWorkoutData(client, {userIds :["1", "2"], startDate : day1} );
     
         console.log(JSON.stringify(result, null, 2));
 
@@ -432,7 +432,7 @@ describe('DynamoDB Service Tests', () => {
     test('getLoadTargetInference: successful for all users', async () => {
         const users = ["1", "2"];
         const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
-        const data = await prepareDataForInference(client, {userIds : users, startDate : day1 } );
+        const data = await getContinousWorkoutData(client, {userIds : users, startDate : day1 } );
         const { loadTargets, timestamp } = await getLoadTargetInference(data);
 
         console.log("got load target for timestamp ,", timestamp, "\"", JSON.stringify(loadTargets, null, 2));

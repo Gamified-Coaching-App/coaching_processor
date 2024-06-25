@@ -498,12 +498,14 @@ async function get_user_id(user_id_garmin) {
     });
 }
 
-async function prepareDataForInference(dynamoDbClient, data = { userIds : [], startDate : null} ) {
+async function getContinousWorkoutData(dynamoDbClient, data = { userIds : [], startDate : null, days : 21} ) {
     // Calculate endDate
-    const  { userIds, startDate } = data;
-    const endDate = moment(startDate).subtract(21, 'days').format('YYYY-MM-DD');
-    console.log("Fetching data for the last 21 days, from", startDate, "to", endDate);
-    
+    let { userIds, startDate, days } = data;
+    if (days == undefined) {
+        days = 21;
+    }
+    const endDate = moment(startDate).subtract(days, 'days').format('YYYY-MM-DD');
+    console.log("Fetching data for the last ", days, " days, from ", startDate, " to ", endDate);
     const results = [];
 
     for (const userId of userIds) {
@@ -543,9 +545,9 @@ async function prepareDataForInference(dynamoDbClient, data = { userIds : [], st
             });
 
             const userData = { userId, data: {} };
-            for (let i = 0; i < 21; i++) {
+            for (let i = 0; i < days; i++) {
                 const date = moment(startDate).subtract(i, 'days').format('YYYY-MM-DD');
-                userData.data[`day${21 - i}`] = dateMap[date] || fillDefaults({ userId, timestampLocal: date });
+                userData.data[`day${days - i}`] = dateMap[date] || fillDefaults({ userId, timestampLocal: date });
             }
 
             results.push(userData);
@@ -852,4 +854,4 @@ async function getAllUsers(dynamoDbClient) {
     }
 }
 
-export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones, prepareDataForInference, getLoadTargetInference, insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt, getTrainingPlan, getAllUsers};
+export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones, getContinousWorkoutData, getLoadTargetInference, insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt, getTrainingPlan, getAllUsers};

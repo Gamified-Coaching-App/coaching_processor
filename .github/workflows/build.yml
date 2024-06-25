@@ -135,12 +135,12 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        working-directory: src/dailyLambdaTrigger
+        working-directory: ./src/dailyLambdaTrigger
         run: npm install
 
       - name: Package Lambda function
         run: |
-          cd src/dailyLambdaTrigger
+          cd ./src/dailyLambdaTrigger
           zip -r ../../lambda.zip . -x '*.git*'
           cd ../..
           zip -ur lambda.zip node_modules
