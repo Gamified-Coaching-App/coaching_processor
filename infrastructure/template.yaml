@@ -405,11 +405,11 @@ Resources:
   #         Id: "TriggerEcsEndpointFunction"
 
   # Permission for EventBridge to invoke Lambda
-  LambdaInvokePermission:
-    Type: AWS::Lambda::Permission
-    DependsOn: DailyEventRule
-    Properties:
-      FunctionName: !Ref TriggerEcsEndpointFunction
-      Action: lambda:InvokeFunction
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt DailyEventRule.Arn
+  # LambdaInvokePermission:
+  #   Type: AWS::Lambda::Permission
+  #   DependsOn: DailyEventRule
+  #   Properties:
+  #     FunctionName: !Ref TriggerEcsEndpointFunction
+  #     Action: lambda:InvokeFunction
+  #     Principal: events.amazonaws.com
+  #     SourceArn: !GetAtt DailyEventRule.Arn
