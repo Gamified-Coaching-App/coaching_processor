@@ -10,6 +10,7 @@ env:
   IMAGE_TAGE_NAME: CoachingDockerImageTag
   CLUSTER_NAME: CoachingProcessorCluster
   STACK_NAME: CoachingProcessorStack
+  LAMBDA_FUNCTION_NAME: coaching-processor-daily-trigger
 
 jobs:
   unit_testing:
@@ -120,3 +121,42 @@ jobs:
         AWS_REGION: eu-west-2
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  
+  deploy_daily_trigger_lambda:
+    needs: deploy_container_on_ecs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: src/dailyLambdaTrigger
+        run: npm install
+
+      - name: Package Lambda function
+        run: |
+          cd src/dailyLambdaTrigger
+          zip -r ../../lambda.zip . -x '*.git*'
+          cd ../..
+          zip -ur lambda.zip node_modules
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Get Lambda Function ARN
+        id: get_lambda_arn
+        run: |
+          lambda_arn=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --query 'Configuration.FunctionArn' --output text)
+          echo "lambda_arn=${lambda_arn}" >> $GITHUB_ENV
+
+      - name: Deploy to AWS Lambda
+        run: aws lambda update-function-code --function-name ${{ env.lambda_arn }} --zip-file fileb://lambda.zip

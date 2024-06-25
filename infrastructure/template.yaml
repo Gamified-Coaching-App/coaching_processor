@@ -382,30 +382,17 @@ Resources:
   # Lambda Function
   TriggerEcsEndpointFunction:
     Type: AWS::Lambda::Function
+    FunctionName: coaching-processor-daily-trigger
     DependsOn:
       - LambdaExecutionRole
       - CoachingProcessorLogGroup
     Properties:
       Handler: index.handler
       Role: !GetAtt LambdaExecutionRole.Arn
-      Code:
-        ZipFile: |
-          import json
-          import requests
-
-          def handler(event, context):
-              url = "http://Coachi-Coach-bgtKlzJd2GCw-908383528.eu-west-2.elb.amazonaws.com/gettrainingplans"
-              payload = {"userIds": "all"}
-              headers = {'Content-Type': 'application/json'}
-              response = requests.post(url, data=json.dumps(payload), headers=headers)
-              print(f"Response Status Code: {response.status_code}")
-              print(f"Response Body: {response.text}")
-              return {
-                  'statusCode': response.status_code,
-                  'body': response.text
-              }
-      Runtime: python3.8
+      Runtime: nodejs20.x
       Timeout: 60
+      Code:
+        ZipFile: ""
 
   # EventBridge Rule
   DailyEventRule:
