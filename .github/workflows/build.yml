@@ -10,7 +10,7 @@ env:
   IMAGE_TAGE_NAME: CoachingDockerImageTag
   CLUSTER_NAME: CoachingProcessorCluster
   STACK_NAME: CoachingProcessorStack
-  LAMBDA_FUNCTION_NAME: coaching-processor-daily-trigger
+  COACHING_DAILY_TRIGGER_LAMBDA_FUNCTION_NAME: coaching-processor-daily-trigger
 
 jobs:
   unit_testing:
@@ -74,7 +74,7 @@ jobs:
           --template-file infrastructure/template.yaml \
           --stack-name ${{ env.STACK_NAME }} \
           --capabilities CAPABILITY_NAMED_IAM \
-          --parameter-overrides ${{ env.IMAGE_TAGE_NAME }}=${{ env.IMAGE_TAG }} \
+          --parameter-overrides ${{ env.IMAGE_TAGE_NAME }}=${{ env.IMAGE_TAG }} CoachingDailyTriggerLambdaFunctionName=${{ env.COACHING_DAILY_TRIGGER_LAMBDA_FUNCTION_NAME }} \
           --no-fail-on-empty-changeset \
           --region eu-west-2 \
           --debug

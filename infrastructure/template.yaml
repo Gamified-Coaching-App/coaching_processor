@@ -14,6 +14,11 @@ Parameters:
     Type: String
     Default: 'latest'
 
+  CoachingDailyTriggerLambdaFunctionName:
+    Description: Name of the Lambda function
+    Type: String
+    Default: 'coaching-processor-daily-trigger'
+
 Resources:
   CoachingVPC:
     Type: AWS::EC2::VPC
@@ -386,13 +391,20 @@ Resources:
       - LambdaExecutionRole
       - CoachingProcessorLogGroup
     Properties:
-      Handler: index.handler
-      FunctionName: coaching-processor-daily-trigger
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Runtime: nodejs20.x
-      Timeout: 60
-      Code:
-        ZipFile: ""
+    FunctionName: !Ref CoachingDailyTriggerLambdaFunctionName
+    Handler: index.handler
+    Role: !GetAtt LambdaExecutionRole.Arn
+    Runtime: nodejs20.x
+    Timeout: 60
+    Code:
+      ZipFile: |
+        exports.handler = async (event) => {
+          console.log("Hello, World!");
+          return {
+            statusCode: 200,
+            body: JSON.stringify('Hello, World!'),
+          };
+        };
 
   # EventBridge Rule
   DailyEventRule:
