@@ -382,12 +382,12 @@ Resources:
   # Lambda Function
   TriggerEcsEndpointFunction:
     Type: AWS::Lambda::Function
-    FunctionName: coaching-processor-daily-trigger
     DependsOn:
       - LambdaExecutionRole
       - CoachingProcessorLogGroup
     Properties:
       Handler: index.handler
+      FunctionName: coaching-processor-daily-trigger
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: nodejs20.x
       Timeout: 60
