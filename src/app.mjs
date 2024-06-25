@@ -1,13 +1,21 @@
 import express from 'express';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb} from './utils.mjs';
+import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt , getTrainingPlan} from './utils.mjs';
 import { buildWorkouts } from './workoutBuilder/workoutBuilder.mjs';
 import moment from 'moment';
+import cors from 'cors';
 
 const dynamoDbClient = new DynamoDBClient({ region: 'eu-west-2' }); 
 
 const app = express();
 app.use(express.json({ limit: '200mb' }));
+
+const corsOptions = {
+    origin: '*',
+    methods: 'GET,POST,PUT,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Authorization',
+    credentials: true,
+};
 
 
 app.post('/workout', async (req, res) => {   
@@ -95,6 +103,26 @@ app.post('/gettrainingplans', async (req, res) =>{
     const trainingPlans = buildWorkouts(loadTargets);
     await insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp} );
     await insertLoadTargetsToDb(dynamoDbClient, { loadTargets, timestamp } );
+});
+
+app.options('/frontend', cors(corsOptions)); 
+app.get('/frontend', cors(corsOptions), async(req, res) => {
+    const jwt = req.headers.authorization?.split(' ')[1];
+    if (!jwt) {
+        console.error("JWT token is missing in Authorization header");
+        return;
+    }
+    const userId = getUserIdFromJwt(jwt);
+    if (!userId) {
+        return res.status(400).send({ message: "Error getting userId from JWT" });
+    }
+    try {
+        const workoutPlan = await getTrainingPlan(dynamoDbClient, userId);
+        res.status(200).send({ workoutPlan });
+      } catch (error) {
+        console.error('Error fetching workout plan:', error);
+        res.status(500).send({ message: 'Error fetching workout plan' });
+      }
 });
 
 // Health check endpoint

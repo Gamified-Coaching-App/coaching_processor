@@ -1,5 +1,5 @@
 import { setupDynamoDB, teardownDynamoDB, client, transformDynamoDBItem , DAY_0 } from './setup.mjs';
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb} from '../src/utils.mjs';
+import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, prepareDataForInference, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getTrainingPlan} from '../src/utils.mjs';
 import { buildWorkouts } from '../src/workoutBuilder/workoutBuilder.mjs';
 import { ScanCommand } from "@aws-sdk/client-dynamodb";
 import moment from 'moment';
@@ -495,5 +495,26 @@ describe('DynamoDB Service Tests', () => {
               expect(dayPlan).toEqual(expectedDayPlan);
             }
           });
+    });
+    test('getTrainingPlan: successful for all users', async () => {
+        const trainingPlan = await getTrainingPlan(client, 1);
+        const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
+        const day2 = moment(DAY_0).add(2, 'days').format('YYYY-MM-DD');
+        const day3 = moment(DAY_0).add(3, 'days').format('YYYY-MM-DD');
+        const day4 = moment(DAY_0).add(4, 'days').format('YYYY-MM-DD');
+        const day5 = moment(DAY_0).add(5, 'days').format('YYYY-MM-DD');
+        const day6 = moment(DAY_0).add(6, 'days').format('YYYY-MM-DD');
+        const day7 = moment(DAY_0).add(7, 'days').format('YYYY-MM-DD');
+
+        const expectedTrainingPlan = {
+            [`${day1}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+            [`${day2}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+            [`${day3}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+            [`${day4}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+            [`${day5}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+            [`${day6}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+            [`${day7}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}}
+        }
+        expect(trainingPlan).toEqual(expectedTrainingPlan);
     });
 });

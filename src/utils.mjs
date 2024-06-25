@@ -1,7 +1,8 @@
 import { GetItemCommand, UpdateItemCommand, BatchGetItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
-import { marshall } from "@aws-sdk/util-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import dayjs from 'dayjs';
 import moment from 'moment';
+import jwt from 'jsonwebtoken';
 
 async function getHeartRateZones(dynamoDbClient, userId) {
     // Define the parameters for the GetItem operation
@@ -733,4 +734,65 @@ async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestam
     }
   }
 
-export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones, prepareDataForInference, getLoadTargetInference, insertLoadTargetsToDb, insertTrainingPlansToDb};
+  async function getTrainingPlan(dynamoDbClient, userId) {
+    const params = {
+      TableName: 'coaching_training_plans',
+      KeyConditionExpression: 'userId = :userId',
+      ExpressionAttributeValues: {
+        ':userId': { S: userId }
+      },
+      ProjectionExpression: '#userId, dateDay1, day1, day2, day3, day4, day5, day6, day7',
+      ExpressionAttributeNames: {
+        '#userId': 'userId'
+      }
+    };
+    let data;
+    try {
+      data = await dynamoDbClient.send(new QueryCommand(params));
+      } catch (error) {
+      console.error('Error fetching workout plan:', error);
+      throw new Error('Error fetching workout plan');
+  }
+    return processTrainingPlan(data.Items[0]);
+  }
+
+  function processTrainingPlan(items) {
+    const baseDate = new Date(items.dateDay1.S);
+  const trainingPlan = {};
+
+  for (let i = 1; i <= 7; i++) {
+    const dateKey = `day${i}`;
+    if (items[dateKey]) {
+      const dayPlan = JSON.parse(items[dateKey].S);
+      const currentDate = new Date(baseDate);
+      currentDate.setDate(baseDate.getDate() + (i - 1));
+      const formattedDate = currentDate.toISOString().split('T')[0];
+
+      Object.entries(dayPlan).forEach(([activityType, sessions]) => {
+        if (activityType === 'running' && sessions) {
+          Object.entries(sessions).forEach(([sessionKey, sessionValue], index) => {
+            const timestampKey = `${formattedDate}_${index + 1}`;
+            trainingPlan[timestampKey] = {
+              type: 'RUNNING',
+              workout: sessionValue
+            };
+          });
+        } else if (activityType !== 'running' && sessions !== 0) {
+          const timestampKey = `${formattedDate}_${activityType.toUpperCase() === 'STRENGTH' ? 2 : 3}`; // Use 2 for STRENGTH, 3 for ALTERNATIVE
+          trainingPlan[timestampKey] = {
+            type: activityType.toUpperCase().replace(' ', '_'),
+            workout: true
+          };
+        }
+      });
+    }
+  }
+  return trainingPlan;
+}
+
+  function getUserIdFromJwt(token) {
+    const decoded = jwt.decode(token);
+    return decoded.sub;
+}
+
+export { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb, writeHealthMetricsToDB, updateHeartRateZones, prepareDataForInference, getLoadTargetInference, insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt, getTrainingPlan};
