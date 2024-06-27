@@ -3,6 +3,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, getContinousWorkoutData, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt , getTrainingPlan, getAllUsers } from './utils.mjs';
 import { buildWorkouts } from './workoutBuilder/workoutBuilder.mjs';
 import { pushWorkoutsToPartners } from './workoutSender/workoutSender.mjs';
+import { getMeanStdv, insertMeanStdvToDb } from './inferencePipeline/utils.mjs';
 import moment from 'moment';
 import cors from 'cors';
 
@@ -138,6 +139,37 @@ app.get('/frontend', cors(corsOptions), async(req, res) => {
         console.error('Error fetching workout plan:', error);
         res.status(500).send({ message: 'Error fetching workout plan' });
       }
+});
+
+app.post('/updatemeanstdv', async(req, res) => {
+    let activeUsers = req.body.userIds;
+    if (activeUsers === undefined) {
+        res.status(400).send({ message: "Missing userIds in request body" });
+        return;
+    }
+    if (activeUsers === "all") {
+        const allUsers = await getAllUsers(dynamoDbClient);
+        activeUsers = allUsers.active;
+        console.log("Update mean stdv for active users: ", activeUsers);
+    }
+    if (!Array.isArray(activeUsers)) {
+        try {
+            activeUsers = JSON.parse(userIds);
+        } catch (e) {
+            res.status(400).send({ message: "userIds must be an array" });
+            return;
+        }
+    }
+    const yesterdayTimestamp = moment().subtract(1, 'days').format('YYYY-MM-DD');
+    const data = await getContinousWorkoutData(dynamoDbClient, { userIds : activeUsers, startDate : yesterdayTimestamp, days : 90 });
+    const meanSdtvPerUser = getMeanStdv(data);
+    const success = await insertMeanStdvToDb(dynamoDbClient, meanSdtvPerUser);
+    if (success) {
+        res.status(200).send({ message: "Processing finished - data available" });
+    }
+    else {
+        res.status(500).send({ message: "Processing finished - error processing data" });
+    }
 });
 
 // Health check endpoint

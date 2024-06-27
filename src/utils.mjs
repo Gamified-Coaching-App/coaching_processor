@@ -499,7 +499,6 @@ async function get_user_id(user_id_garmin) {
 }
 
 async function getContinousWorkoutData(dynamoDbClient, data = { userIds : [], startDate : null, days : 21} ) {
-    // Calculate endDate
     let { userIds, startDate, days } = data;
     if (days == undefined) {
         days = 21;
@@ -528,8 +527,8 @@ async function getContinousWorkoutData(dynamoDbClient, data = { userIds : [], st
             items.forEach(item => {
                 const date = item.timestampLocal.S;
                 dateMap[date] = fillDefaults({
-                    userId: item.userId.S,
-                    timestampLocal: item.timestampLocal.S,
+                    //userId: item.userId.S,
+                    //timestampLocal: item.timestampLocal.S,
                     numberSessions: item.numberSessions?.N,
                     kmTotal: item.kmTotal?.N,
                     kmZ3Z4: item.kmZ3Z4?.N,
@@ -585,8 +584,6 @@ function parseMap(map) {
 
 function fillDefaults(data) {
     return {
-        userId: data.userId,
-        timestampLocal: data.timestampLocal,
         numberSessions: parseNumber(data.numberSessions),
         kmTotal: parseNumber(data.kmTotal),
         kmZ3Z4: parseNumber(data.kmZ3Z4),

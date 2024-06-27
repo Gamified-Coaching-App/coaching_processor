@@ -185,6 +185,7 @@
     "lru-cache": "^6.0.0",
     "make-dir": "^4.0.0",
     "makeerror": "^1.0.12",
+    "mathjs": "^13.0.0",
     "media-typer": "^0.3.0",
     "merge-descriptors": "^1.0.1",
     "merge-stream": "^2.0.0",

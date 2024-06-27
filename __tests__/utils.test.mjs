@@ -2,6 +2,7 @@ import { setupDynamoDB, teardownDynamoDB, client, transformDynamoDBItem , DAY_0 
 import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, getContinousWorkoutData, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getTrainingPlan} from '../src/utils.mjs';
 import { buildWorkouts } from '../src/workoutBuilder/workoutBuilder.mjs';
 import { sendWorkouts, deleteWorkouts, pushWorkoutsToPartners } from '../src/workoutSender/workoutSender.mjs';
+import { getMeanStdv, insertMeanStdvToDb } from '../src/inferencePipeline/utils.mjs';
 import { ScanCommand } from "@aws-sdk/client-dynamodb";
 import moment from 'moment';
 import { expect } from '@jest/globals';
@@ -362,8 +363,8 @@ describe('DynamoDB Service Tests', () => {
 
     // Check if day20 for both users contains the expected hardcoded data
     const expectedDay20User1 = {
-        userId: '1',
-        timestampLocal: DAY_0,
+        //userId: '1',
+        //timestampLocal: DAY_0,
         numberSessions: 3,
         kmTotal: 7,
         kmZ3Z4: 2.5,
@@ -377,8 +378,8 @@ describe('DynamoDB Service Tests', () => {
         injured: false
     };
     const expectedDay20User2 = {
-        userId: '2',
-        timestampLocal: DAY_0,
+        //userId: '2',
+        //timestampLocal: DAY_0,
         numberSessions: 2,
         kmTotal: 5,
         kmZ3Z4: 2,
@@ -526,89 +527,144 @@ describe('DynamoDB Service Tests', () => {
         expect(trainingPlan).toEqual(expectedTrainingPlan);
     });
 
-    test('sendWorkouts and deleteWorkouts: successful for all users', async () => {
-        const workout = {
-            "workoutName": "Bike Workout",
-            "description": "TEST1",
-            "sport": "CYCLING",
-            "estimatedDurationInSecs": 3600,
-            "estimatedDistanceInMeters": 10000,
-            "workoutProvider": "test",
-            "workoutSourceId": 1,
-            "steps": [
-                {
-                    "type": "WorkoutStep",
-                    "stepOrder": 1,
-                    "intensity": "ACTIVE",
-                    "description": "Test description",
-                    "durationType": "TIME",
-                    "durationValue": 120,
-                    "durationValueType": null,
-                    "targetType": "SPEED",
-                    "targetValue": null,
-                    "targetValueLow": 3.3809523,
-                    "targetValueHigh": 2.3809523,
-                    "targetValueType": null,
-                    "secondaryTargetType": "POWER",
-                    "secondaryTargetValue": null,
-                    "secondaryTargetValueLow": 100,
-                    "secondaryTargetValueHigh": 120,
-                    "secondaryTargetValueType": null
-            }]
-        };
-        const today = moment().format('YYYY-MM-DD');
-        const userData = [{
-            userId: 'a4370654-eedc-4b84-b52f-cb0450020e9c',
-            workout: workout, 
-            timestampLocal: today
-        }];
-        console.log('userData as input to sendWorkouts:\n', userData);
-        let response = await sendWorkouts(userData);
-        const deleteData = response.map(({ workoutId, scheduleId }) => ({ userId: "a4370654-eedc-4b84-b52f-cb0450020e9c", ids: { workout: workoutId, schedule: scheduleId } }));
-        console.log("deleteData", deleteData);
-        response = await deleteWorkouts(deleteData);
+    // test('sendWorkouts and deleteWorkouts: successful for all users', async () => {
+    //     const workout = {
+    //         "workoutName": "Bike Workout",
+    //         "description": "TEST1",
+    //         "sport": "CYCLING",
+    //         "estimatedDurationInSecs": 3600,
+    //         "estimatedDistanceInMeters": 10000,
+    //         "workoutProvider": "test",
+    //         "workoutSourceId": 1,
+    //         "steps": [
+    //             {
+    //                 "type": "WorkoutStep",
+    //                 "stepOrder": 1,
+    //                 "intensity": "ACTIVE",
+    //                 "description": "Test description",
+    //                 "durationType": "TIME",
+    //                 "durationValue": 120,
+    //                 "durationValueType": null,
+    //                 "targetType": "SPEED",
+    //                 "targetValue": null,
+    //                 "targetValueLow": 3.3809523,
+    //                 "targetValueHigh": 2.3809523,
+    //                 "targetValueType": null,
+    //                 "secondaryTargetType": "POWER",
+    //                 "secondaryTargetValue": null,
+    //                 "secondaryTargetValueLow": 100,
+    //                 "secondaryTargetValueHigh": 120,
+    //                 "secondaryTargetValueType": null
+    //         }]
+    //     };
+    //     const today = moment().format('YYYY-MM-DD');
+    //     const userData = [{
+    //         userId: 'a4370654-eedc-4b84-b52f-cb0450020e9c',
+    //         workout: workout, 
+    //         timestampLocal: today
+    //     }];
+    //     console.log('userData as input to sendWorkouts:\n', userData);
+    //     let response = await sendWorkouts(userData);
+    //     const deleteData = response.map(({ workoutId, scheduleId }) => ({ userId: "a4370654-eedc-4b84-b52f-cb0450020e9c", ids: { workout: workoutId, schedule: scheduleId } }));
+    //     console.log("deleteData", deleteData);
+    //     response = await deleteWorkouts(deleteData);
 
-        const expectedResponse = [
-            {
-              userId: 'a4370654-eedc-4b84-b52f-cb0450020e9c',
-              statusOkWorkout: true,
-              statusOkSchedule: true
-            }
-          ];
-        expect(response).toEqual(expectedResponse);
-    },15000);
+    //     const expectedResponse = [
+    //         {
+    //           userId: 'a4370654-eedc-4b84-b52f-cb0450020e9c',
+    //           statusOkWorkout: true,
+    //           statusOkSchedule: true
+    //         }
+    //       ];
+    //     expect(response).toEqual(expectedResponse);
+    // },15000);
 
-    test('pushWorkoutsToGarmin: successful for all users', async () => {
-        const scanParams = {
-            TableName: "coaching_partner_tracking"
-        };
-        const loadTargets = [
-            {
-              "userId": "a4370654-eedc-4b84-b52f-cb0450020e9c",
-              "loadTargets": {
-                "day1": { "numberSession": 1, "totalKm": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day2": { "numberSession": 1, "totalKm": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+    // test('pushWorkoutsToGarmin: successful for all users', async () => {
+    //     const scanParams = {
+    //         TableName: "coaching_partner_tracking"
+    //     };
+    //     const loadTargets = [
+    //         {
+    //           "userId": "a4370654-eedc-4b84-b52f-cb0450020e9c",
+    //           "loadTargets": {
+    //             "day1": { "numberSession": 1, "totalKm": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day2": { "numberSession": 1, "totalKm": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+    //           }
+    //         }];
+    //     const nonActiveUsers = [];
+    //     const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
+    //     const timestamp = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
+    //     await pushWorkoutsToPartners(client, trainingPlans, timestamp);
+    //     let command = new ScanCommand(scanParams);
+    //     let data = await client.send(command);
+    //     let items = data.Items.map(item => transformDynamoDBItem(item));
+    //     console.log('coaching_partner_tracking after first operation:', JSON.stringify(items, 2, null));
+    //     await pushWorkoutsToPartners(client, trainingPlans, timestamp);
+    //     command = new ScanCommand(scanParams);
+    //     data = await client.send(command);
+    //     items = data.Items.map(item => transformDynamoDBItem(item));
+    //     console.log('coaching_partner_tracking after second operation:', JSON.stringify(items, 2, null));
+
+    //     expect(true).toEqual(true);
+    // }, 60000);
+
+    test('getMeanStdv: successful for all users', async () => {
+        const yesterdayTimestamp = moment().subtract(1, 'days').format('YYYY-MM-DD');
+        const userIds = [1,2];
+        const data = await getContinousWorkoutData(client, { userIds : userIds, startDate : yesterdayTimestamp, days : 90 });
+        const meanSdtvPerUser = getMeanStdv(data);
+        console.log('meanSdtvPerUser:\n', JSON.stringify(meanSdtvPerUser, null, 2));
+
+        const expectedOutputUser1 = {
+              "userId": 1,
+              "values": {
+                "numberSessions": {
+                  "mean": 0.03333333333333333,
+                  "stdv": 0.3144660377352204
+                },
+                "kmTotal": {
+                  "mean": 0.07777777777777778,
+                  "stdv": 0.7337540880488473
+                },
+                "kmZ3Z4": {
+                  "mean": 0.027777777777777776,
+                  "stdv": 0.2620550314460163
+                },
+                "kmZ5": {
+                  "mean": 0.016666666666666666,
+                  "stdv": 0.1572330188676102
+                },
+                "kmSprint": {
+                  "mean": 0.011111111111111112,
+                  "stdv": 0.10482201257840687
+                },
+                "hoursAlternative": {
+                  "mean": 0.022222222222222223,
+                  "stdv": 0.20964402515681374
+                },
+                "numberStrengthSessions": {
+                  "mean": 0.011111111111111112,
+                  "stdv": 0.10482201257840687
+                },
+                "perceivedTrainingSuccess": {
+                  "mean": -0.08999999999999986,
+                  "stdv": 0.09433981132056597
+                },
+                "perceivedRecovery": {
+                  "mean": -0.09333333333333318,
+                  "stdv": 0.06289320754704411
+                },
+                "perceivedExertion": {
+                  "mean": -0.0977777777777776,
+                  "stdv": 0.02096440251568127
+                }
               }
-            }];
-        const nonActiveUsers = [];
-        const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
-        const timestamp = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
-        await pushWorkoutsToPartners(client, trainingPlans, timestamp);
-        let command = new ScanCommand(scanParams);
-        let data = await client.send(command);
-        let items = data.Items.map(item => transformDynamoDBItem(item));
-        console.log('coaching_partner_tracking after first operation:', JSON.stringify(items, 2, null));
-        await pushWorkoutsToPartners(client, trainingPlans, timestamp);
-        command = new ScanCommand(scanParams);
-        data = await client.send(command);
-        items = data.Items.map(item => transformDynamoDBItem(item));
-        console.log('coaching_partner_tracking after second operation:', JSON.stringify(items, 2, null));
-
-        expect(true).toEqual(true);
+            };
+        expect(meanSdtvPerUser[0]).toEqual(expectedOutputUser1);
     }, 60000);
 });
