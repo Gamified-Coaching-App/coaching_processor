@@ -352,6 +352,21 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+  
+  PartnerWorkoutTrackingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "coaching_partner_tracking"
+      AttributeDefinitions:
+        - AttributeName: "userId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "userId"
+          KeyType: "HASH"
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
 
   # IAM Role for Lambda
   LambdaExecutionRole:

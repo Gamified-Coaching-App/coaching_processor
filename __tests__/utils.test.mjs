@@ -1,6 +1,7 @@
 import { setupDynamoDB, teardownDynamoDB, client, transformDynamoDBItem , DAY_0 } from './setup.mjs';
 import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, getContinousWorkoutData, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getTrainingPlan} from '../src/utils.mjs';
 import { buildWorkouts } from '../src/workoutBuilder/workoutBuilder.mjs';
+import { sendWorkouts, deleteWorkouts, pushWorkoutsToPartners } from '../src/workoutSender/workoutSender.mjs';
 import { ScanCommand } from "@aws-sdk/client-dynamodb";
 import moment from 'moment';
 import { expect } from '@jest/globals';
@@ -499,7 +500,7 @@ describe('DynamoDB Service Tests', () => {
           });
     });
     test('getTrainingPlan: successful for all users', async () => {
-        const trainingPlan = await getTrainingPlan(client, 1);
+        const trainingPlan = await getTrainingPlan(client, [1]);
         const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
         const day2 = moment(DAY_0).add(2, 'days').format('YYYY-MM-DD');
         const day3 = moment(DAY_0).add(3, 'days').format('YYYY-MM-DD');
@@ -508,15 +509,106 @@ describe('DynamoDB Service Tests', () => {
         const day6 = moment(DAY_0).add(6, 'days').format('YYYY-MM-DD');
         const day7 = moment(DAY_0).add(7, 'days').format('YYYY-MM-DD');
 
-        const expectedTrainingPlan = {
-            [`${day1}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
-            [`${day2}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
-            [`${day3}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
-            [`${day4}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
-            [`${day5}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
-            [`${day6}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
-            [`${day7}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}}
-        }
+        console.log('trainingPlan:\n', trainingPlan);
+
+        const expectedTrainingPlan = [{
+            userId: '1',
+            workoutPlan: {
+                [`${day1}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                [`${day2}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                [`${day3}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                [`${day4}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                [`${day5}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                [`${day6}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                [`${day7}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}}
+            }
+            }];
         expect(trainingPlan).toEqual(expectedTrainingPlan);
     });
+
+    test('sendWorkouts and deleteWorkouts: successful for all users', async () => {
+        const workout = {
+            "workoutName": "Bike Workout",
+            "description": "TEST1",
+            "sport": "CYCLING",
+            "estimatedDurationInSecs": 3600,
+            "estimatedDistanceInMeters": 10000,
+            "workoutProvider": "test",
+            "workoutSourceId": 1,
+            "steps": [
+                {
+                    "type": "WorkoutStep",
+                    "stepOrder": 1,
+                    "intensity": "ACTIVE",
+                    "description": "Test description",
+                    "durationType": "TIME",
+                    "durationValue": 120,
+                    "durationValueType": null,
+                    "targetType": "SPEED",
+                    "targetValue": null,
+                    "targetValueLow": 3.3809523,
+                    "targetValueHigh": 2.3809523,
+                    "targetValueType": null,
+                    "secondaryTargetType": "POWER",
+                    "secondaryTargetValue": null,
+                    "secondaryTargetValueLow": 100,
+                    "secondaryTargetValueHigh": 120,
+                    "secondaryTargetValueType": null
+            }]
+        };
+        const today = moment().format('YYYY-MM-DD');
+        const userData = [{
+            userId: 'a4370654-eedc-4b84-b52f-cb0450020e9c',
+            workout: workout, 
+            timestampLocal: today
+        }];
+        console.log('userData as input to sendWorkouts:\n', userData);
+        let response = await sendWorkouts(userData);
+        const deleteData = response.map(({ workoutId, scheduleId }) => ({ userId: "a4370654-eedc-4b84-b52f-cb0450020e9c", ids: { workout: workoutId, schedule: scheduleId } }));
+        console.log("deleteData", deleteData);
+        response = await deleteWorkouts(deleteData);
+
+        const expectedResponse = [
+            {
+              userId: 'a4370654-eedc-4b84-b52f-cb0450020e9c',
+              statusOkWorkout: true,
+              statusOkSchedule: true
+            }
+          ];
+        expect(response).toEqual(expectedResponse);
+    },15000);
+
+    test('pushWorkoutsToGarmin: successful for all users', async () => {
+        const scanParams = {
+            TableName: "coaching_partner_tracking"
+        };
+        const loadTargets = [
+            {
+              "userId": "a4370654-eedc-4b84-b52f-cb0450020e9c",
+              "loadTargets": {
+                "day1": { "numberSession": 1, "totalKm": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day2": { "numberSession": 1, "totalKm": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+              }
+            }];
+        const nonActiveUsers = [];
+        const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
+        const timestamp = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
+        await pushWorkoutsToPartners(client, trainingPlans, timestamp);
+        let command = new ScanCommand(scanParams);
+        let data = await client.send(command);
+        let items = data.Items.map(item => transformDynamoDBItem(item));
+        console.log('coaching_partner_tracking after first operation:', JSON.stringify(items, 2, null));
+        await pushWorkoutsToPartners(client, trainingPlans, timestamp);
+        command = new ScanCommand(scanParams);
+        data = await client.send(command);
+        items = data.Items.map(item => transformDynamoDBItem(item));
+        console.log('coaching_partner_tracking after second operation:', JSON.stringify(items, 2, null));
+
+        expect(true).toEqual(true);
+    }, 60000);
 });

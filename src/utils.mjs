@@ -686,6 +686,8 @@ async function insertLoadTargetsToDb(dynamoDbClient, { loadTargets, timestamp} )
 }
 
 async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp }) {
+    console.log("Inserting training plans to DB...");
+    console.log("Training plans at DB insertion: ", JSON.stringify(trainingPlans));
     const tableName = 'coaching_training_plans';
     const dateDay1 = timestamp.slice(0, 10); // Extract the date part from the timestamp
   
@@ -736,36 +738,55 @@ async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestam
     }
   }
 
-  async function getTrainingPlan(dynamoDbClient, userId) {
+  async function getTrainingPlan(dynamoDbClient, userIds) {
+    const keys = userIds.map(userId => ({
+      userId: { S: userId }
+    }));
+  
     const params = {
-      TableName: 'coaching_training_plans',
-      KeyConditionExpression: 'userId = :userId',
-      ExpressionAttributeValues: {
-        ':userId': { S: userId }
-      },
-      ProjectionExpression: '#userId, dateDay1, day1, day2, day3, day4, day5, day6, day7',
-      ExpressionAttributeNames: {
-        '#userId': 'userId'
+      RequestItems: {
+        'coaching_training_plans': {
+          Keys: keys,
+          ProjectionExpression: '#userId, dateDay1, day1, day2, day3, day4, day5, day6, day7',
+          ExpressionAttributeNames: {
+            '#userId': 'userId'
+          }
+        }
       }
     };
+  
     let data;
     try {
-      data = await dynamoDbClient.send(new QueryCommand(params));
-      } catch (error) {
-      console.error('Error fetching workout plan:', error);
-      throw new Error('Error fetching workout plan');
+      data = await dynamoDbClient.send(new BatchGetItemCommand(params));
+    } catch (error) {
+      console.error('Error fetching workout plans:', error);
+      throw new Error('Error fetching workout plans');
+    }
+  
+    // Process each user's training plan
+    const results = data.Responses['coaching_training_plans'].map(item => {
+      const unmarshalledItem = unmarshall(item);
+      return {
+        userId: unmarshalledItem.userId,
+        workoutPlan: processTrainingPlan(unmarshalledItem)
+      };
+    });
+    console.log('Training plans:', results);
+    return results;
   }
-    return processTrainingPlan(data.Items[0]);
-  }
+  
 
   function processTrainingPlan(items) {
-    const baseDate = new Date(items.dateDay1.S);
+    console.log("Processing training plan...", items);
+    const baseDate = new Date(items.dateDay1);
     const trainingPlan = {};
 
     for (let i = 1; i <= 7; i++) {
         const dateKey = `day${i}`;
         if (items[dateKey]) {
-            const dayPlan = JSON.parse(items[dateKey].S);
+            console.log("Processing date key:", dateKey);
+            console.log("Items[dateKey]:", items[dateKey])
+            const dayPlan = JSON.parse(items[dateKey]);
 
             // Check if all three parameters are 0
             if (dayPlan.running === 0 && dayPlan.strength === 0 && dayPlan.alternative === 0) {

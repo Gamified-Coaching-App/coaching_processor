@@ -19,6 +19,7 @@ const healthTableName = "coaching_health";
 const userDataTableName = "coaching_user_data";
 const loadTargetsTableName = "coaching_load_targets";
 const trainingPlansTableName = "coaching_training_plans";
+const coachingPartnerTrackingName = 'coaching_partner_tracking';
 
 export async function setupDynamoDB() {
     await sleep(5000);
@@ -80,6 +81,20 @@ export async function setupDynamoDB() {
                 WriteCapacityUnits: 1
             }
         }),
+        new CreateTableCommand({
+            TableName: coachingPartnerTrackingName,
+            AttributeDefinitions: [
+                { AttributeName: "userId", AttributeType: "S" }
+            ],
+            KeySchema: [
+                { AttributeName: "userId", KeyType: "HASH" }
+            ],
+            ProvisionedThroughput: {
+                ReadCapacityUnits: 1,
+                WriteCapacityUnits: 1
+            }
+        }),
+        
         new CreateTableCommand({
             TableName: loadTargetsTableName,
             AttributeDefinitions: [
@@ -188,6 +203,13 @@ export async function setupDynamoDB() {
         TableName: userDataTableName,
         Item: {
             userId: { S: "2" },
+            dateOfBirth: { S: "1998-08-10" }  // ISO format adjusted from "10. August 1998"
+        }
+    }));
+    await client.send(new PutItemCommand({
+        TableName: userDataTableName,
+        Item: {
+            userId: { S: "a4370654-eedc-4b84-b52f-cb0450020e9c" },
             dateOfBirth: { S: "1998-08-10" }  // ISO format adjusted from "10. August 1998"
         }
     }));

@@ -2,6 +2,7 @@ import express from 'express';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, getContinousWorkoutData, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt , getTrainingPlan, getAllUsers } from './utils.mjs';
 import { buildWorkouts } from './workoutBuilder/workoutBuilder.mjs';
+import { pushWorkoutsToPartners } from './workoutSender/workoutSender.mjs';
 import moment from 'moment';
 import cors from 'cors';
 
@@ -107,13 +108,14 @@ app.post('/gettrainingplans', async (req, res) =>{
         console.log("Load targets: ", loadTargets);
         const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
         await insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp } );
+        await pushWorkoutsToPartners(dynamoDbClient, trainingPlans, nonActiveUsers, timestamp);
         await insertLoadTargetsToDb(dynamoDbClient, { loadTargets, timestamp } );
     } else {
         const loadTargets = null;
         const timestamp = moment().format('YYYY-MM-DD-HH-mm-ss');
         const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
         await insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp } );
-    }  
+    }
 });
 
 app.options('/frontend', cors(corsOptions)); 
@@ -128,7 +130,9 @@ app.get('/frontend', cors(corsOptions), async(req, res) => {
         return res.status(400).send({ message: "Error getting userId from JWT" });
     }
     try {
-        const workoutPlan = await getTrainingPlan(dynamoDbClient, userId);
+        const data = await getTrainingPlan(dynamoDbClient, [userId]);
+        const workoutPlan = data[0].workoutPlan;
+        console.log("Training plan from endpoint: ", workoutPlan);
         res.status(200).send({ workoutPlan });
       } catch (error) {
         console.error('Error fetching workout plan:', error);
