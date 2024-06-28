@@ -259,7 +259,7 @@ async function pushWorkoutsToPartners(dynamoDbClient, trainingPlans, nonActiveUs
         if (nonActiveUsers.includes(userId)) continue;
 
         // Initialize the start date
-        let currentDate = moment(timestamp);
+        let currentDate = moment(new Date(timestamp).toISOString());
 
         // Loop through each day in the training plan
         for (const day of Object.keys(trainingPlan)) {
