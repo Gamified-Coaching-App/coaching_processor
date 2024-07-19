@@ -3,7 +3,7 @@ import { UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 
 function getMeanStdv(data) {
     console.log("Calculating mean and stdv for users");
-    console.log("Data: ", data[0]);
+    //console.log("Data: ", data[0]);
 
     const metrics = [
         'numberSessions',
@@ -34,7 +34,7 @@ function getMeanStdv(data) {
         const metricStdvs = {};
 
         metrics.forEach(metric => {
-            console.log("Metric values:", metricValues[metric])
+            //console.log("Metric values:", metricValues[metric])
             metricMeans[metric] = math.mean(metricValues[metric]);
             metricStdvs[metric] = math.std(metricValues[metric], 'uncorrected'); // 'uncorrected' for population std dev
         });

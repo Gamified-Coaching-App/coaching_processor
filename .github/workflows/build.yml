@@ -7,7 +7,7 @@ on:
 
 env:
   IMAGE_TAG: ghcr.io/gamified-coaching-app/coaching_processor:v1.0
-  IMAGE_TAGE_NAME: CoachingDockerImageTag
+  IMAGE_TAG_NAME: CoachingDockerImageTag
   CLUSTER_NAME: CoachingProcessorCluster
   STACK_NAME: CoachingProcessorStack
   COACHING_DAILY_TRIGGER_LAMBDA_FUNCTION_NAME: coaching-processor-daily-trigger
@@ -74,7 +74,7 @@ jobs:
           --template-file infrastructure/template.yaml \
           --stack-name ${{ env.STACK_NAME }} \
           --capabilities CAPABILITY_NAMED_IAM \
-          --parameter-overrides ${{ env.IMAGE_TAGE_NAME }}=${{ env.IMAGE_TAG }} CoachingDailyTriggerLambdaFunctionName=${{ env.COACHING_DAILY_TRIGGER_LAMBDA_FUNCTION_NAME }} \
+          --parameter-overrides ${{ env.IMAGE_TAG_NAME }}=${{ env.IMAGE_TAG }} CoachingDailyTriggerLambdaFunctionName=${{ env.COACHING_DAILY_TRIGGER_LAMBDA_FUNCTION_NAME }} \
           --no-fail-on-empty-changeset \
           --region eu-west-2 \
           --debug

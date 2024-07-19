@@ -350,7 +350,7 @@ describe('DynamoDB Service Tests', () => {
         const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
         const result = await getContinousWorkoutData(client, {userIds :["1", "2"], startDate : day1} );
     
-        console.log(JSON.stringify(result, null, 2));
+        //console.log(JSON.stringify(result, null, 2));
 
         // Check if the object has 2 UserIDs with 21 consecutive days
     expect(result).toHaveLength(2);
@@ -432,12 +432,13 @@ describe('DynamoDB Service Tests', () => {
     });
 
     test('getLoadTargetInference: successful for all users', async () => {
-        const users = ["1", "2"];
+        const users = ["1"];
         const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
-        const data = await getContinousWorkoutData(client, {userIds : users, startDate : day1 } );
+        let data = await getContinousWorkoutData(client, {userIds : users, startDate : day1 } );
+        data[0].userId = 'a4370654-eedc-4b84-b52f-cb0450020e9c'
         const { loadTargets, timestamp } = await getLoadTargetInference(data);
-
-        console.log("got load target for timestamp ,", timestamp, "\"", JSON.stringify(loadTargets, null, 2));
+ 
+        console.log("got load target for timestamp ,", timestamp, "\"", loadTargets);
         await insertLoadTargetsToDb(client, { loadTargets, timestamp} );
         expect(true).toEqual(true);
     });
@@ -472,7 +473,7 @@ describe('DynamoDB Service Tests', () => {
         const nonActiveUsers = null;
         const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
         const timestamp = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
-        console.log('trainingPlans:\n', trainingPlans);
+        //console.log('trainingPlans:\n', trainingPlans);
         
         await insertTrainingPlansToDb(client, { trainingPlans, timestamp });
 
@@ -510,7 +511,7 @@ describe('DynamoDB Service Tests', () => {
         const day6 = moment(DAY_0).add(6, 'days').format('YYYY-MM-DD');
         const day7 = moment(DAY_0).add(7, 'days').format('YYYY-MM-DD');
 
-        console.log('trainingPlan:\n', trainingPlan);
+        //console.log('trainingPlan:\n', trainingPlan);
 
         const expectedTrainingPlan = [{
             userId: '1',
@@ -618,7 +619,7 @@ describe('DynamoDB Service Tests', () => {
         const userIds = [1,2];
         const data = await getContinousWorkoutData(client, { userIds : userIds, startDate : yesterdayTimestamp, days : 90 });
         const meanSdtvPerUser = getMeanStdv(data);
-        console.log('meanSdtvPerUser:\n', JSON.stringify(meanSdtvPerUser, null, 2));
+        //console.log('meanSdtvPerUser:\n', JSON.stringify(meanSdtvPerUser, null, 2));
 
         const expectedOutputUser1 = {
               "userId": 1,
