@@ -10,9 +10,9 @@ export function buildWorkouts(loadTargets, nonActiveUsers) {
     // Iterate through each load target and create a training plan
     let workouts = [];
     if (loadTargets !== null) {
-        workouts = loadTargets.map(user => ({
-        userId: user.userId,
-        trainingPlan: createTrainingPlanForUser(user.loadTargets)
+        workouts = Object.keys(loadTargets).map(userId => ({
+            userId: userId,
+            trainingPlan: createTrainingPlanForUser(loadTargets[userId])
         }));
     }
     if (nonActiveUsers !== null) {

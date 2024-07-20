@@ -444,32 +444,27 @@ describe('DynamoDB Service Tests', () => {
     });
 
     test('buildWorkouts: successful for all users', async () => {
-        const loadTargets = [
+        const loadTargets = 
             {
-              "userId": "1",
-              "loadTargets": {
-                "day1": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day2": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+                "1": {
+                    "day1": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day2": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+              },
+                "2": {
+                    "day1": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day2": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
               }
-            },
-            {
-              "userId": "2",
-              "loadTargets": {
-                "day1": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day2": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
-              }
-            }
-          ];
+            };
         const nonActiveUsers = null;
         const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
         const timestamp = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
