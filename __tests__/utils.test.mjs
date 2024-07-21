@@ -685,8 +685,6 @@ describe('DynamoDB Service Tests', () => {
         const day6 = moment(DAY_0).add(6, 'days').format('YYYY-MM-DD');
         const day7 = moment(DAY_0).add(7, 'days').format('YYYY-MM-DD');
 
-        //console.log('trainingPlan:\n', trainingPlan);
-
         const expectedTrainingPlan = [{
             userId: '1',
             workoutPlan: {
