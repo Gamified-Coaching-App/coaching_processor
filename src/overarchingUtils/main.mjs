@@ -1,9 +1,10 @@
-import https from 'https';
 import jwt from 'jsonwebtoken';
 import { ScanCommand } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 
-async function get_user_id(user_id_garmin) {
+import https from 'https';
+
+async function getUserId(user_id_garmin) {
     console.log("Getting user ID for Garmin user ID:", user_id_garmin);
     const url = `https://f53aet9v26.execute-api.eu-west-2.amazonaws.com/dev_1/get-user-id?partner=garmin&partner_user_ids=${user_id_garmin}`;
 
@@ -75,4 +76,4 @@ async function getAllUsers(dynamoDbClient) {
     }
 }
 
-export { get_user_id, getUserIdFromJwt, getAllUsers };
+export { getUserId, getUserIdFromJwt, getAllUsers };

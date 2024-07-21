@@ -1,3 +1,6 @@
+import { UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { getUserId } from '../overarchingUtils/main.mjs';
+
 async function writeHealthMetricsToDB(dynamoDbClient, payload) {
     const dailies = payload.dailies;
 
@@ -12,7 +15,7 @@ async function writeHealthMetricsToDB(dynamoDbClient, payload) {
         } = daily;
 
         // Simulate getting the actual system user ID from the Garmin user ID
-        const userId = await get_user_id(userIdGarmin);
+        const userId = await getUserId(userIdGarmin);
 
         const params = {
             TableName: "coaching_health",
