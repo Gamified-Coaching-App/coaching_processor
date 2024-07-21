@@ -768,8 +768,6 @@ describe('DynamoDB Service Tests', () => {
                         }
                     }
                 }];
-
-        console.log("trainingPlan3", JSON.stringify(trainingPlan3));
             
         expect(trainingPlan1).toEqual(expectedTrainingPlan1);
         expect(trainingPlan2).toEqual(expectedTrainingPlan2);
