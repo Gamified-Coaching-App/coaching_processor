@@ -15,6 +15,7 @@ import { getMeanStdv, insertMeanStdvToDb } from '../src/loadTargets/meanStdv.mjs
 import { ScanCommand } from "@aws-sdk/client-dynamodb";
 import moment from 'moment';
 import { expect } from '@jest/globals';
+import { empty } from 'statuses';
 
 describe('DynamoDB Service Tests', () => {
     beforeAll(async () => {
@@ -468,7 +469,7 @@ describe('DynamoDB Service Tests', () => {
                     "day2": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
                     "day3": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
                     "day4": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day5": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day5": { "numberSession": 0, "kmTotal": 0, "kmZ34": 0, "kmZ5": 0, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
                     "day6": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
                     "day7": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
               }
@@ -499,7 +500,11 @@ describe('DynamoDB Service Tests', () => {
             for (let i = 1; i <= 7; i++) {
               const dayKey = `day${i}`;
               const dayPlan = userPlan.trainingPlan[dayKey];
-              expect(dayPlan).toEqual(expectedDayPlan);
+              if (userPlan.userId === '2' && i === 5) {
+                expect(dayPlan).toEqual(undefined);
+              } else {
+                expect(dayPlan).toEqual(expectedDayPlan);
+              }
             }
           });
     });

@@ -9,7 +9,7 @@ async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestam
       const { userId, trainingPlan } = userPlan;
       const params = {
         TableName: tableName,
-        Key: marshall({ userId }),
+        Key: marshall({ userId }, { removeUndefinedValues: true }),
         UpdateExpression: `SET 
           day1 = :day1,
           day2 = :day2,
@@ -47,7 +47,7 @@ async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestam
       await Promise.all(updatePromises);
       console.log('All training plans updated successfully');
     } catch (error) {
-      console.error('Error updating training plans', error);
+      console.error('Error updating training plans in DB', error);
     }
   }
 
