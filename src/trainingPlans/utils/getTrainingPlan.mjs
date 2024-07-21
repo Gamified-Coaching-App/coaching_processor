@@ -38,7 +38,6 @@ async function getTrainingPlan(dynamoDbClient, userIds) {
     return results;
   }
   
-
   function processTrainingPlan(items) {
     const baseDate = new Date(items.dateDay1);
     const trainingPlan = {};

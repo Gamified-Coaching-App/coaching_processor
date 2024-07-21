@@ -12,7 +12,7 @@ export function buildWorkouts(loadTargets, nonActiveUsers) {
     if (loadTargets !== null) {
         workouts = Object.keys(loadTargets).map(userId => ({
             userId: userId,
-            trainingPlan: createTrainingPlanForUser(loadTargets[userId])
+            trainingPlan: createTrainingPlanForUser(loadTargets[userId], userId)
         }));
     }
     if (nonActiveUsers !== null) {
@@ -28,41 +28,42 @@ export function buildWorkouts(loadTargets, nonActiveUsers) {
      * @returns {Object} trainingPlan - An object representing the 7-day training plan. Each day includes a running plan with warmup, 
      *                                  main intervals, and cooldown, as well as strength training and alternative hours.
      */
-function createTrainingPlanForUser(suggestion) {
+function createTrainingPlanForUser(suggestion, userId) {
     const trainingPlan = {};
 
     for (let i = 0; i < 7; i++) {
+        let runningPlan = {};
         let remainingKm = { value: suggestion[`day${i + 1}`].kmTotal };
 
-        if (remainingKm.value < DEFAULT_WARMUP_KM) {
-            continue;
-        }
-        // Add warmup and cooldown to the plan
-        const runningPlan = { 'session_1': { 'warmup': { 'Z2': DEFAULT_WARMUP_KM } } };
-        remainingKm.value -= runningPlan['session_1']['warmup']['Z2'];
+        if (remainingKm.value > DEFAULT_WARMUP_KM) {
+            // Add warmup and cooldown to the plan
+            runningPlan = { 'session_1': { 'warmup': { 'Z2': DEFAULT_WARMUP_KM } } };
+            remainingKm.value -= runningPlan['session_1']['warmup']['Z2'];
 
-        if (remainingKm.value > 0) {
-            runningPlan['session_1']['cooldown'] = { 'Z2': Math.min(DEFAULT_COOL_DOWN_KM, remainingKm.value) };
-            remainingKm.value -= runningPlan['session_1']['cooldown']['Z2'];
-        }
+            if (remainingKm.value > 0) {
+                runningPlan['session_1']['cooldown'] = { 'Z2': Math.min(DEFAULT_COOL_DOWN_KM, remainingKm.value) };
+                remainingKm.value -= runningPlan['session_1']['cooldown']['Z2'];
+            }
 
-        if (remainingKm.value > 0) {
-            runningPlan['session_1']['main'] = {};
-            // Define objects to pass by reference
-            let intervalNumber = { value : 1 };
-            
-            // Add Zone 5 intervals to the plan
-            const kmZone5 = suggestion[`day${i + 1}`].kmZ5;
-            addIntervalsToTrainingPlan(runningPlan, remainingKm, kmZone5, intervalNumber, 'Z5');
+            if (remainingKm.value > 0) {
+                runningPlan['session_1']['main'] = {};
+                // Define objects to pass by reference
+                let intervalNumber = { value : 1 };
+                
+                // Add Zone 5 intervals to the plan
+                const kmZone5 = suggestion[`day${i + 1}`].kmZ5;
+                addIntervalsToTrainingPlan(runningPlan, remainingKm, kmZone5, intervalNumber, 'Z5');
 
-            // Add Zone 4 intervals to the plan
-            const kmZone34 = suggestion[`day${i + 1}`].kmZ3Z4;
-            addIntervalsToTrainingPlan(runningPlan, remainingKm, kmZone34, intervalNumber, 'Z4');
+                // Add Zone 4 intervals to the plan
+                const kmZone34 = suggestion[`day${i + 1}`].kmZ3Z4;
+                addIntervalsToTrainingPlan(runningPlan, remainingKm, kmZone34, intervalNumber, 'Z4');
 
-            // Add Zone 2 intervals to the plan
-            const kmZone2 = remainingKm.value;
-            addIntervalsToTrainingPlan(runningPlan, remainingKm, kmZone2, intervalNumber, 'Z2');
-            
+                // Add Zone 2 intervals to the plan
+                const kmZone2 = remainingKm.value;
+                addIntervalsToTrainingPlan(runningPlan, remainingKm, kmZone2, intervalNumber, 'Z2');  
+            }
+        } else {
+            runningPlan = 0;
         }
         const dayPlan = {
             'running': runningPlan,

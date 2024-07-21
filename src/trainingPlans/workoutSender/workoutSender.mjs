@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import moment from 'moment';
 import { BatchGetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
+
 async function createWorkout({ userAccessToken, userAccessTokenSecret, workoutString }) {
     const url = 'https://apis.garmin.com/training-api/workout';
     const method = 'POST';

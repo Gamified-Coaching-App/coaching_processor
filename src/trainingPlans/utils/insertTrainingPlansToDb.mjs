@@ -9,7 +9,7 @@ async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestam
       const { userId, trainingPlan } = userPlan;
       const params = {
         TableName: tableName,
-        Key: marshall({ userId }, { removeUndefinedValues: true }),
+        Key: marshall({ userId }),
         UpdateExpression: `SET 
           day1 = :day1,
           day2 = :day2,
@@ -30,8 +30,8 @@ async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestam
           ':day7': JSON.stringify(trainingPlan.day7),
           ':updatedTimestamp': timestamp,
           ':dateDay1': dateDay1
-        }),
-        ReturnValues: 'UPDATED_NEW'
+        }, { removeUndefinedValues: true }),
+            ReturnValues: 'UPDATED_NEW'
       };
   
       try {
