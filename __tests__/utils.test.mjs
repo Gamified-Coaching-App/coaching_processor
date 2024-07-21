@@ -682,7 +682,11 @@ describe('DynamoDB Service Tests', () => {
         expect(garminWorkout2).toEqual(expectedWorkout2);
     });
     test('getTrainingPlan: successful for all users', async () => {
-        const trainingPlan = await getTrainingPlan(client, [1]);
+        const trainingPlan1 = await getTrainingPlan(client, [1]);
+        const trainingPlan2 = await getTrainingPlan(client, [2]);
+        let trainingPlan3 = [{"userId":"a4370654-eedc-4b84-b52f-cb0450020e9c","trainingPlan":{"day1":{"running": 0,"strength":0,"alternative":0}, "day2":{"running":{"session_1":{"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}],"interval_2":[{"Z4":1},{"Z2":1}],"interval_3":[{"Z2":1},{"Z2":1}]}}},"strength":0,"alternative":0},"day3":{"running": 0,"strength":1,"alternative":0}, "day4":{"running":{"session_1":{"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}],"interval_2":[{"Z2":1},{"Z2":1}],"interval_3":[{"Z2":1},{"Z2":1}]}}},"strength":0,"alternative":0},"day5":{"running": 0,"strength":2,"alternative":0},"day6":{"running":{"session_1":{"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}],"interval_2":[{"Z4":1},{"Z2":1}],"interval_3":[{"Z4":1},{"Z2":1}]}}},"strength":0,"alternative":0}, "day7":{"running": 0,"strength":0,"alternative":0}}}];
+        await insertTrainingPlansToDb(client, { trainingPlans: trainingPlan3, timestamp: moment(DAY_0).add(1, 'days').format('YYYY-MM-DD') });
+        trainingPlan3 = await getTrainingPlan(client, ["a4370654-eedc-4b84-b52f-cb0450020e9c"]);
         const day1 = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
         const day2 = moment(DAY_0).add(2, 'days').format('YYYY-MM-DD');
         const day3 = moment(DAY_0).add(3, 'days').format('YYYY-MM-DD');
@@ -691,7 +695,7 @@ describe('DynamoDB Service Tests', () => {
         const day6 = moment(DAY_0).add(6, 'days').format('YYYY-MM-DD');
         const day7 = moment(DAY_0).add(7, 'days').format('YYYY-MM-DD');
 
-        const expectedTrainingPlan = [{
+        const expectedTrainingPlan1 = [{
             userId: '1',
             workoutPlan: {
                 [`${day1}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
@@ -703,7 +707,73 @@ describe('DynamoDB Service Tests', () => {
                 [`${day7}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}}
             }
             }];
-        expect(trainingPlan).toEqual(expectedTrainingPlan);
+            const expectedTrainingPlan2 = [{
+                userId: '2',
+                workoutPlan: {
+                    [`${day1}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                    [`${day2}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                    [`${day3}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                    [`${day4}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                    [`${day6}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},
+                    [`${day7}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}}
+                }
+                }];
+
+                const expectedTrainingPlan3 = [{
+                    userId: 'a4370654-eedc-4b84-b52f-cb0450020e9c',
+                    workoutPlan: {
+                        [`${day2}_1`]: {
+                            "type": "RUNNING",
+                            "workout": {
+                                "warmup": {"Z2": 1.5},
+                                "cooldown": {"Z2": 1.5},
+                                "main": {
+                                    "interval_1": [{"Z4": 1}, {"Z2": 1}],
+                                    "interval_2": [{"Z4": 1}, {"Z2": 1}],
+                                    "interval_3": [{"Z2": 1}, {"Z2": 1}]
+                                }
+                            }
+                        },
+                        [`${day3}_1`]: {
+                            "type": "STRENGTH",
+                            "workout": true
+                        },
+                        [`${day4}_1`]: {
+                            "type": "RUNNING",
+                            "workout": {
+                                "warmup": {"Z2": 1.5},
+                                "cooldown": {"Z2": 1.5},
+                                "main": {
+                                    "interval_1": [{"Z4": 1}, {"Z2": 1}],
+                                    "interval_2": [{"Z2": 1}, {"Z2": 1}],
+                                    "interval_3": [{"Z2": 1}, {"Z2": 1}]
+                                }
+                            }
+                        },
+                        [`${day5}_1`]: {
+                            "type": "STRENGTH",
+                            "workout": true
+                        },
+                        [`${day6}_1`]: {
+                            "type": "RUNNING",
+                            "workout": {
+                                "warmup": {"Z2": 1.5},
+                                "cooldown": {"Z2": 1.5},
+                                "main": {
+                                    "interval_1": [{"Z4": 1}, {"Z2": 1}],
+                                    "interval_2": [{"Z4": 1}, {"Z2": 1}],
+                                    "interval_3": [{"Z4": 1}, {"Z2": 1}]
+                                }
+                            }
+                        }
+                    }
+                }];
+
+        console.log("trainingPlan3", JSON.stringify(trainingPlan3));
+            
+        expect(trainingPlan1).toEqual(expectedTrainingPlan1);
+        expect(trainingPlan2).toEqual(expectedTrainingPlan2);
+        expect(trainingPlan3).toEqual(expectedTrainingPlan3);
     });
 
     // test('sendWorkouts and deleteWorkouts: successful for all users', async () => {
