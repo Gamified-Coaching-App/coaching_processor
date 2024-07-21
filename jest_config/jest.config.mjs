@@ -1,6 +1,7 @@
 export default {
     rootDir: "../",  // Points to the project root from the jest_config directory
     moduleFileExtensions: ['js', 'json', 'jsx', 'node', 'mjs'],
+    runInBand: true,
     transform: {
         '^.+\\.m?js$': 'babel-jest',
     },
