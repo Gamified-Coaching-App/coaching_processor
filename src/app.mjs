@@ -1,11 +1,19 @@
 import express from 'express';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb , writeSubjectiveParamsToDb, getContinousWorkoutData, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getUserIdFromJwt , getTrainingPlan, getAllUsers } from './utils.mjs';
-import { buildWorkouts } from './workoutBuilder/workoutBuilder.mjs';
-import { pushWorkoutsToPartners } from './workoutSender/workoutSender.mjs';
-import { getMeanStdv, insertMeanStdvToDb } from './inferencePipeline/utils.mjs';
 import moment from 'moment';
 import cors from 'cors';
+import { getHeartRateZones } from './heartRateZones/getHeartRateZones.mjs';
+import { getKmPerHeartRateZone } from './dailyLog/getKmPerHeartRateZone.mjs';
+import { writeWorkoutToDb } from './dailyLog/writeWorkoutsToDb.mjs';
+import { writeSubjectiveParamsToDb } from './subjectiveParams/writeSubjectiveParamsToDb.mjs';
+import { getContinousWorkoutData } from './loadTargets/getContinousWorkoutData.mjs';
+import { getLoadTargetInference } from './loadTargets/getLoadTargetInference.mjs';
+import { insertLoadTargetsToDb } from './loadTargets/insertLoadTargetsToDb.mjs';
+import { insertTrainingPlansToDb } from './trainingPlans/utils/insertTrainingPlansToDb.mjs';
+import { getTrainingPlan } from './trainingPlans/utils/getTrainingPlan.mjs';
+import { buildWorkouts } from './trainingPlans/workoutBuilder/workoutBuilder.mjs';
+import { pushWorkoutsToPartners } from './trainingPlans/workoutSender/workoutSender.mjs';
+import { getMeanStdv, insertMeanStdvToDb } from './loadTargets/meanStdv.mjs';
 
 const dynamoDbClient = new DynamoDBClient({ region: 'eu-west-2' }); 
 

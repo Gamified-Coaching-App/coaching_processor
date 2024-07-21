@@ -1,4 +1,4 @@
-import { DynamoDBClient, CreateTableCommand, PutItemCommand, BatchWriteItemCommand, DeleteTableCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, CreateTableCommand, PutItemCommand, BatchWriteItemCommand, DeleteTableCommand, UpdateItemCommand} from "@aws-sdk/client-dynamodb";
 import moment from 'moment';
 
 export const DAY_0 = moment().subtract(1, 'days').format('YYYY-MM-DD');

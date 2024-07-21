@@ -1,12 +1,20 @@
 import { setupDynamoDB, teardownDynamoDB, client, transformDynamoDBItem , DAY_0 } from './setup.mjs';
-import { getHeartRateZones, getKmPerHeartRateZone, writeWorkoutToDb, writeSubjectiveParamsToDb , updateHeartRateZones, getContinousWorkoutData, getLoadTargetInference , insertLoadTargetsToDb, insertTrainingPlansToDb, getTrainingPlan} from '../src/utils.mjs';
-import { buildWorkouts } from '../src/workoutBuilder/workoutBuilder.mjs';
-import { sendWorkouts, deleteWorkouts, pushWorkoutsToPartners } from '../src/workoutSender/workoutSender.mjs';
-import { getMeanStdv, insertMeanStdvToDb } from '../src/inferencePipeline/utils.mjs';
+import { getHeartRateZones } from '../src/heartRateZones/getHeartRateZones.mjs';
+import { getKmPerHeartRateZone } from '../src/dailyLog/getKmPerHeartRateZone.mjs';
+import { writeWorkoutToDb } from '../src/dailyLog/writeWorkoutsToDb.mjs';
+import { writeSubjectiveParamsToDb } from '../src/subjectiveParams/writeSubjectiveParamsToDb.mjs';
+import { updateHeartRateZones } from '../src/heartRateZones/updateHeartRateZones.mjs';
+import { getContinousWorkoutData } from '../src/loadTargets/getContinousWorkoutData.mjs';
+import { getLoadTargetInference } from '../src/loadTargets/getLoadTargetInference.mjs';
+import { insertLoadTargetsToDb } from '../src/loadTargets/insertLoadTargetsToDb.mjs';
+import { insertTrainingPlansToDb } from '../src/trainingPlans/utils/insertTrainingPlansToDb.mjs';
+import { getTrainingPlan } from '../src/trainingPlans/utils/getTrainingPlan.mjs';
+import { buildWorkouts } from '../src/trainingPlans/workoutBuilder/workoutBuilder.mjs';
+import { sendWorkouts, deleteWorkouts, pushWorkoutsToPartners, toGarminFormat } from '../src/trainingPlans/workoutSender/workoutSender.mjs';
+import { getMeanStdv, insertMeanStdvToDb } from '../src/loadTargets/meanStdv.mjs';
 import { ScanCommand } from "@aws-sdk/client-dynamodb";
 import moment from 'moment';
 import { expect } from '@jest/globals';
-import { load } from 'mime';
 
 describe('DynamoDB Service Tests', () => {
     beforeAll(async () => {
@@ -447,28 +455,27 @@ describe('DynamoDB Service Tests', () => {
         const loadTargets = 
             {
                 "1": {
-                    "day1": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day2": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+                    "day1": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day2": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day3": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day4": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day5": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day6": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day7": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
               },
                 "2": {
-                    "day1": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day2": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-                    "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+                    "day1": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day2": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day3": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day4": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day5": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day6": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+                    "day7": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
               }
             };
         const nonActiveUsers = null;
         const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
         const timestamp = moment(DAY_0).add(1, 'days').format('YYYY-MM-DD');
-        //console.log('trainingPlans:\n', trainingPlans);
         
         await insertTrainingPlansToDb(client, { trainingPlans, timestamp });
 
@@ -495,6 +502,173 @@ describe('DynamoDB Service Tests', () => {
               expect(dayPlan).toEqual(expectedDayPlan);
             }
           });
+    });
+
+    test('buildWorkouts test 2: successful for all users', async () => {
+        const loadTargets1 = {
+            'a4370654-eedc-4b84-b52f-cb0450020e9c': {
+            day1: { numberSessions: 0, kmTotal: 0, kmZ3Z4: 0, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day2: { numberSessions: 1, kmTotal: 5.38, kmZ3Z4: 2.58, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day3: { numberSessions: 1, kmTotal: 0, kmZ3Z4: 0, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day4: { numberSessions: 1, kmTotal: 8, kmZ3Z4: 1.1, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day5: { numberSessions: 2, kmTotal: 0, kmZ3Z4: 0, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 2 },
+            day6: { numberSessions: 1, kmTotal: 7.990000000000001, kmZ3Z4: 4.180000000000001, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day7: { numberSessions: 0, kmTotal: 0, kmZ3Z4: 0, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 }
+            }
+        };
+        const loadTargets2 = {
+            'a4370654-eedc-4b84-b52f-cb0450020e9c': {
+            day1: { numberSessions: 0, kmTotal: 0, kmZ3Z4: 0, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day2: { numberSessions: 1, kmTotal: 10, kmZ3Z4: 2.58, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day3: { numberSessions: 1, kmTotal: 0, kmZ3Z4: 0, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day4: { numberSessions: 1, kmTotal: 10, kmZ3Z4: 1.1, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day5: { numberSessions: 2, kmTotal: 0, kmZ3Z4: 0, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 2 },
+            day6: { numberSessions: 1, kmTotal: 10, kmZ3Z4: 4.180000000000001, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 },
+            day7: { numberSessions: 0, kmTotal: 0, kmZ3Z4: 0, kmZ5: 0, kmSprint: 0, hoursAlternative: 0, numberStrengthSessions: 0 }
+            }
+        };
+        const trainingPlan1 = buildWorkouts(loadTargets1, null);
+        const trainingPlan2 = buildWorkouts(loadTargets2, null);
+
+        const expectedTrainingPlan1 = [{"userId":"a4370654-eedc-4b84-b52f-cb0450020e9c","trainingPlan":{"day2":{"running":{"session_1":{"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}]}}},"strength":0,"alternative":0},"day4":{"running":{"session_1":{"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}],"interval_2":[{"Z2":1},{"Z2":1}]}}},"strength":0,"alternative":0},"day6":{"running":{"session_1":{"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}],"interval_2":[{"Z4":1},{"Z2":1}]}}},"strength":0,"alternative":0}}}];
+        const expectedTrainingPlan2 = [{"userId":"a4370654-eedc-4b84-b52f-cb0450020e9c","trainingPlan":{"day2":{"running":{"session_1":{"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}],"interval_2":[{"Z4":1},{"Z2":1}],"interval_3":[{"Z2":1},{"Z2":1}]}}},"strength":0,"alternative":0},"day4":{"running":{"session_1":{"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}],"interval_2":[{"Z2":1},{"Z2":1}],"interval_3":[{"Z2":1},{"Z2":1}]}}},"strength":0,"alternative":0},"day6":{"running":{"session_1":{"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}],"interval_2":[{"Z4":1},{"Z2":1}],"interval_3":[{"Z4":1},{"Z2":1}]}}},"strength":0,"alternative":0}}}];
+        expect(trainingPlan1).toEqual(expectedTrainingPlan1);
+        expect(trainingPlan2).toEqual(expectedTrainingPlan2);
+    });
+
+    test('toGarminFormat: successful for all users', async () => {
+        const trainingPlan1 = {"warmup":{"Z2":1.5},"main":{}};
+        const heartRateZones = {
+                zone1Lower: 0,
+                zone1Upper: 127,
+                zone2Lower: 127,
+                zone2Upper: 146,
+                zone3Lower: 146,
+                zone3Upper: 166,
+                zone4Lower: 166,
+                zone4Upper: 176,
+                zone5Lower: 176,
+                zone5Upper: 195
+        };
+        const garminWorkout1 = toGarminFormat(trainingPlan1, heartRateZones);
+        const trainingPlan2 = {"warmup":{"Z2":1.5},"cooldown":{"Z2":1.5},"main":{"interval_1":[{"Z4":1},{"Z2":1}],"interval_2":[{"Z4":1},{"Z2":1}],"interval_3":[{"Z2":1},{"Z2":1}]}};
+        const garminWorkout2 = toGarminFormat(trainingPlan2, heartRateZones);
+        const expectedWorkout1 = {"workoutName":"Run","description":"This is an interval session with short and intense 1 km intervals.","sport":"RUNNING","estimatedDistanceInMeters":1500,"workoutProvider":"Blaze","steps":[{"type":"WorkoutStep","stepOrder":1,"intensity":"WARMUP","description":"WARMUP phase","durationType":"DISTANCE","durationValue":1500,"durationValueType":"METER","targetType":"HEART_RATE","targetValueLow":127,"targetValueHigh":146}]};
+        const expectedWorkout2 = {
+            "workoutName": "Run",
+            "description": "This is an interval session with short and intense 1 km intervals.",
+            "sport": "RUNNING",
+            "estimatedDistanceInMeters": 9000,
+            "workoutProvider": "Blaze",
+            "steps": [
+                {
+                    "type": "WorkoutStep",
+                    "stepOrder": 1,
+                    "intensity": "WARMUP",
+                    "description": "WARMUP phase",
+                    "durationType": "DISTANCE",
+                    "durationValue": 1500,
+                    "durationValueType": "METER",
+                    "targetType": "HEART_RATE",
+                    "targetValueLow": 127,
+                    "targetValueHigh": 146
+                },
+                {
+                    "type": "WorkoutRepeatStep",
+                    "repeatType": "REPEAT_UNTIL_STEPS_CMPLT",
+                    "repeatValue": 1,
+                    "stepOrder": 2,
+                    "steps": [
+                        {
+                            "type": "WorkoutStep",
+                            "stepOrder": 3,
+                            "intensity": "INTERVAL",
+                            "description": "Interval phase",
+                            "durationType": "DISTANCE",
+                            "durationValue": 1000,
+                            "durationValueType": "METER",
+                            "targetType": "HEART_RATE",
+                            "targetValueLow": 166,
+                            "targetValueHigh": 176
+                        },
+                        {
+                            "type": "WorkoutStep",
+                            "stepOrder": 4,
+                            "intensity": "RECOVERY",
+                            "description": "Interval phase",
+                            "durationType": "DISTANCE",
+                            "durationValue": 1000,
+                            "durationValueType": "METER",
+                            "targetType": "HEART_RATE",
+                            "targetValueLow": 127,
+                            "targetValueHigh": 146
+                        },
+                        {
+                            "type": "WorkoutStep",
+                            "stepOrder": 5,
+                            "intensity": "INTERVAL",
+                            "description": "Interval phase",
+                            "durationType": "DISTANCE",
+                            "durationValue": 1000,
+                            "durationValueType": "METER",
+                            "targetType": "HEART_RATE",
+                            "targetValueLow": 166,
+                            "targetValueHigh": 176
+                        },
+                        {
+                            "type": "WorkoutStep",
+                            "stepOrder": 6,
+                            "intensity": "RECOVERY",
+                            "description": "Interval phase",
+                            "durationType": "DISTANCE",
+                            "durationValue": 1000,
+                            "durationValueType": "METER",
+                            "targetType": "HEART_RATE",
+                            "targetValueLow": 127,
+                            "targetValueHigh": 146
+                        },
+                        {
+                            "type": "WorkoutStep",
+                            "stepOrder": 7,
+                            "intensity": "RECOVERY",
+                            "description": "Interval phase",
+                            "durationType": "DISTANCE",
+                            "durationValue": 1000,
+                            "durationValueType": "METER",
+                            "targetType": "HEART_RATE",
+                            "targetValueLow": 127,
+                            "targetValueHigh": 146
+                        },
+                        {
+                            "type": "WorkoutStep",
+                            "stepOrder": 8,
+                            "intensity": "RECOVERY",
+                            "description": "Interval phase",
+                            "durationType": "DISTANCE",
+                            "durationValue": 1000,
+                            "durationValueType": "METER",
+                            "targetType": "HEART_RATE",
+                            "targetValueLow": 127,
+                            "targetValueHigh": 146
+                        }
+                    ]
+                },
+                {
+                    "type": "WorkoutStep",
+                    "stepOrder": 9,
+                    "intensity": "COOLDOWN",
+                    "description": "COOLDOWN phase",
+                    "durationType": "DISTANCE",
+                    "durationValue": 1500,
+                    "durationValueType": "METER",
+                    "targetType": "HEART_RATE",
+                    "targetValueLow": 127,
+                    "targetValueHigh": 146
+                }
+            ]
+        };
+        expect(garminWorkout1).toEqual(expectedWorkout1);
+        expect(garminWorkout2).toEqual(expectedWorkout2);
     });
     test('getTrainingPlan: successful for all users', async () => {
         const trainingPlan = await getTrainingPlan(client, [1]);
@@ -583,13 +757,13 @@ describe('DynamoDB Service Tests', () => {
     //         {
     //           "userId": "a4370654-eedc-4b84-b52f-cb0450020e9c",
     //           "loadTargets": {
-    //             "day1": { "numberSession": 1, "totalKm": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-    //             "day2": { "numberSession": 1, "totalKm": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-    //             "day3": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-    //             "day4": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-    //             "day5": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-    //             "day6": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
-    //             "day7": { "numberSession": 1, "totalKm": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
+    //             "day1": { "numberSession": 1, "kmTotal": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day2": { "numberSession": 1, "kmTotal": 10, "kmZ34": 1, "kmZ5": 2, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day3": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day4": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day5": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day6": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 },
+    //             "day7": { "numberSession": 1, "kmTotal": 5, "kmZ34": 1, "kmZ5": 1, "kmSprint": 0, "numberStrengthSessions": 0, "hoursAlternative": 0 }
     //           }
     //         }];
     //     const nonActiveUsers = [];

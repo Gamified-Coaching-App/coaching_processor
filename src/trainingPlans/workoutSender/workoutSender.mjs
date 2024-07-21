@@ -1,9 +1,7 @@
-import { getHeartRateZones, getTrainingPlan } from '../utils.mjs';
+import { getHeartRateZones } from '../../heartRateZones/getHeartRateZones.mjs';
 import OAuth from 'oauth-1.0a';
 import crypto from 'crypto';
-import { time } from 'console';
 import moment from 'moment';
-import { stat } from 'fs';
 import { BatchGetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 async function createWorkout({ userAccessToken, userAccessTokenSecret, workoutString }) {
@@ -342,7 +340,7 @@ function toGarminFormat(session, heartRateZones) {
     }
 
     // Add main interval steps wrapped in WorkoutRepeatStep
-    if (session.main) {
+    if (session.main && Object.keys(session.main).length > 0) {
         const repeatSteps = [];
         for (const interval in session.main) {
             for (const segment of session.main[interval]) {
@@ -360,7 +358,7 @@ function toGarminFormat(session, heartRateZones) {
     }
 
     // Add cooldown steps
-    if (session.cooldown) {
+    if (session.cooldown && Object.keys(session.cooldown).length > 0) {
         workout.steps.push(toGarminStep({ segment: session.cooldown, heartRateZones: heartRateZones, interval: "COOLDOWN", stepOrder }));
     }
 
@@ -498,4 +496,4 @@ function toGarminStep({ segment, heartRateZones, interval, stepOrder }) {
         }
     }
 
-export { sendWorkouts, deleteWorkouts, pushWorkoutsToPartners }
+export { sendWorkouts, deleteWorkouts, pushWorkoutsToPartners, toGarminFormat }
