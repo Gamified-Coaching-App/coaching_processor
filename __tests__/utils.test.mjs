@@ -697,6 +697,8 @@ describe('DynamoDB Service Tests', () => {
                 [`${day7}_1`]:{"type":"RUNNING","workout":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}}
             }
             }];
+        console.log('trainingPlan:\n', JSON.stringify(trainingPlan));
+        console.log('Expected trainingPlan:\n', JSON.stringify(expectedTrainingPlan));
         expect(trainingPlan).toEqual(expectedTrainingPlan);
     });
 
