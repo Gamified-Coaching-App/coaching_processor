@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node app.mjs",
-    "test": "jest --clearCache && jest --config ./jest_config/jest.config.mjs"
+    "test": "jest --clearCache && jest --config ./jest_config/jest.config.mjs && --runInBand"
   },
   "author": "",
   "license": "ISC",
