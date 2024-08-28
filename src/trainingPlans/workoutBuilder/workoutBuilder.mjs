@@ -66,9 +66,7 @@ function createTrainingPlanForUser(suggestion, userId) {
             runningPlan = 0;
         }
         const dayPlan = {
-            'running': runningPlan,
-            'strength': suggestion[`day${i + 1}`].numberStrengthSessions,
-            'alternative': suggestion[`day${i + 1}`].hoursAlternative
+            'running': runningPlan
         };
         trainingPlan[`day${i + 1}`] = dayPlan;
     }
@@ -97,9 +95,7 @@ function createEmptyPlan(userId) {
 
     for (let i = 1; i <= 7; i++) {
         trainingPlan[`day${i}`] = {
-            running: 0,
-            strength: 0,
-            alternative: 0
+            running: 0
         };
     }
 

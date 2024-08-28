@@ -113,7 +113,7 @@ app.post('/gettrainingplans', async (req, res) =>{
     res.status(200).send({ message: "Processing started" });
     const yesterdayTimestamp = moment().subtract(1, 'days').format('YYYY-MM-DD');
     if (activeUsers.length !== 0) {
-        const data = await getContinousWorkoutData(dynamoDbClient, { userIds : activeUsers, startDate : yesterdayTimestamp });
+        const data = await getContinousWorkoutData(dynamoDbClient, { userIds : activeUsers, startDate : yesterdayTimestamp, days : 56 });
         const { loadTargets, timestamp } = await getLoadTargetInference(data);
         console.log("Load targets: ", loadTargets);
         const trainingPlans = buildWorkouts(loadTargets, nonActiveUsers);
