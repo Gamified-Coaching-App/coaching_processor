@@ -47,8 +47,7 @@ async function getTrainingPlan(dynamoDbClient, userIds) {
         if (items[dateKey]) {
             const dayPlan = JSON.parse(items[dateKey]);
 
-            // Check if all three parameters are 0
-            if (dayPlan.running === 0 && dayPlan.strength === 0 && dayPlan.alternative === 0) {
+            if (dayPlan.running === 0) {
                 continue;
             }
 
@@ -58,7 +57,6 @@ async function getTrainingPlan(dynamoDbClient, userIds) {
 
             let sessionCounter = 1;
 
-            // Process running sessions
             if (dayPlan.running !== 0 && typeof dayPlan.running === 'object') {
                 Object.entries(dayPlan.running).forEach(([sessionKey, sessionValue]) => {
                     const timestampKey = `${formattedDate}_${sessionCounter}`;
@@ -69,28 +67,8 @@ async function getTrainingPlan(dynamoDbClient, userIds) {
                     sessionCounter++;
                 });
             }
-
-            // Process strength sessions
-            if (dayPlan.strength !== 0) {
-                const timestampKey = `${formattedDate}_${sessionCounter}`;
-                trainingPlan[timestampKey] = {
-                    type: 'STRENGTH',
-                    workout: true
-                };
-                sessionCounter++;
-            }
-
-            // Process alternative sessions
-            if (dayPlan.alternative !== 0) {
-                const timestampKey = `${formattedDate}_${sessionCounter}`;
-                trainingPlan[timestampKey] = {
-                    type: 'ALTERNATIVE',
-                    workout: true
-                };
-                sessionCounter++;
             }
         }
-    }
     return trainingPlan;
 }
 
