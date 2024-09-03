@@ -141,12 +141,15 @@ app.get('/frontend', cors(corsOptions), async(req, res) => {
     }
     try {
         const data = await getTrainingPlan(dynamoDbClient, [userId]);
-        const workoutPlan = data[0].workoutPlan;
+        let workoutPlan
+        if (data[0] === undefined)
+            workoutPlan = null
+        else workoutPlan = data[0].workoutPlan;;
         console.log("Training plan from endpoint: ", workoutPlan);
         res.status(200).send({ workoutPlan });
       } catch (error) {
         console.error('Error fetching workout plan:', error);
-        res.status(500).send({ message: 'Error fetching workout plan' });
+        res.status(200).send({ message: 'Error fetching workout plan' });
       }
 });
 
