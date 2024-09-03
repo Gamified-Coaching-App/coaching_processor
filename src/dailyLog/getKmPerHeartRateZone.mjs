@@ -1,3 +1,6 @@
+/* 
+function to compute km per heart rate zone from raw heart rate and raw distance data, sent by Garmin
+*/
 function getKmPerHeartRateZone(zones, heartRatesJson, distancesJson) {
     let kmZone1 = 0, kmZone2 = 0, kmZone3 = 0, kmZone4 = 0, kmZone5 = 0;
     const heartRates = JSON.parse(heartRatesJson);

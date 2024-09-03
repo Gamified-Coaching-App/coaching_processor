@@ -1,5 +1,8 @@
 import moment from 'moment';
 
+/* 
+function to get inference from load optimiser for list of users with data prepared for inference: 56 consecutive days of data for each user
+*/
 async function getLoadTargetInference(data) {
 
     const url = 'http://Coachi-Coach-YF6Q88XaHeGU-926801549.eu-west-2.elb.amazonaws.com/predict';

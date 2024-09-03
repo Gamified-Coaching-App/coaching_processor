@@ -1,3 +1,6 @@
+/* 
+configuration of workoutBuilder intervals
+*/
 export const INTERVALS = {
     'Z5Default': {
         'effort': { 'Z5': 1.0 },

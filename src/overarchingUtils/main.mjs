@@ -4,6 +4,9 @@ import { unmarshall } from '@aws-sdk/util-dynamodb';
 
 import https from 'https';
 
+/* 
+function to get "blaze" user id based on Garmin user id
+*/
 async function getUserId(user_id_garmin) {
     console.log("Getting user ID for Garmin user ID:", user_id_garmin);
     const url = `https://f53aet9v26.execute-api.eu-west-2.amazonaws.com/dev_1/get-user-id?partner=garmin&partner_user_ids=${user_id_garmin}`;
@@ -36,11 +39,17 @@ async function getUserId(user_id_garmin) {
     });
 }
 
+/* 
+function to get user ID from JWT token (needed for frontend endpoint, where a JWT token is used for authentication and user identification)
+*/
 function getUserIdFromJwt(token) {
     const decoded = jwt.decode(token);
     return decoded.sub;
 }
 
+/* 
+function to get all users clubbed into active and non-active users
+*/
 async function getAllUsers(dynamoDbClient) {
     const params = {
         TableName: "coaching_user_data"

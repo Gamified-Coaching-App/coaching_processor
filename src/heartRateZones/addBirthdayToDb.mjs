@@ -1,5 +1,8 @@
 import { UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 
+/* 
+function to add user's birthday to the database - this data is required for heart rate zone calculations
+*/
 async function addBirthdayToDB(dynamoDbClient, userId, dateOfBirth) {
     try {
         await dynamoDbClient.send(new UpdateItemCommand({

@@ -1,6 +1,9 @@
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { marshall } from "@aws-sdk/util-dynamodb";
 
+/* 
+function to insert load targets to the database after making an inference to load optimiser
+*/
 async function insertLoadTargetsToDb(dynamoDbClient, { loadTargets, timestamp }) {
     const tableName = 'coaching_load_targets';
     const dateDay1 = timestamp.slice(0, 10); 

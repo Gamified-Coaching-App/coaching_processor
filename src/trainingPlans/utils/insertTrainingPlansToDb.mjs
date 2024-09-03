@@ -1,6 +1,9 @@
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { marshall } from "@aws-sdk/util-dynamodb";
 
+/* 
+function to insert training plans to the database after making an inference to training plan optimiser
+*/
 async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp }) {
     const tableName = 'coaching_training_plans';
     const dateDay1 = timestamp.slice(0, 10);

@@ -1,5 +1,8 @@
 import { GetItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 
+/* 
+function to increment the coaching daily log data in the database, based on new incoming km per heart rate zone data
+*/
 async function writeWorkoutToDb(dynamoDbclient, params) {
     const { userId, timestampLocal, activityType, sessionId, duration, kmPerHeartRateZone } = params
 

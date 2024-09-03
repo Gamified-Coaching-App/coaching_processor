@@ -28,6 +28,9 @@ const corsOptions = {
 };
 
 
+/*
+endpoint for receiving workout data, computing km per heart rate zone and incrementing values in the database
+*/
 app.post('/workout', async (req, res) => {   
     const { userId, timestampLocal, sessionId, activityType, duration, heartRates, distances } = req.body;
   
@@ -45,7 +48,6 @@ app.post('/workout', async (req, res) => {
         return;
         
     }
-
     let kmPerHeartRateZone = null;
     if (req.body.activityType === "RUNNING") {
         try {
@@ -63,6 +65,9 @@ app.post('/workout', async (req, res) => {
     }
 });
 
+/*
+endpoint for receiving subjective parameters by session id and writing them to the database
+*/
 app.post('/subjparams', async (req, res) => {
     const { userId, sessionId, timestampLocal, perceivedExertion, perceivedRecovery, perceivedTrainingSuccess } = req.body;
     console.log("Starting insertion of subjective parameters with request body: ", 
@@ -86,6 +91,9 @@ app.post('/subjparams', async (req, res) => {
     }
 });
 
+/*
+endpoint for updating training plans: get continuous workout data for 56 days, infer load targets, build training plans, push them to partners, and update the database
+*/
 app.post('/gettrainingplans', async (req, res) =>{
     let activeUsers = req.body.userIds;
     let nonActiveUsers = null;
@@ -127,6 +135,9 @@ app.post('/gettrainingplans', async (req, res) =>{
     }
 });
 
+/*
+endpoint for frontend to fetch training plan
+*/
 app.options('/frontend', cors(corsOptions)); 
 app.get('/frontend', cors(corsOptions), async(req, res) => {
     const jwt = req.headers.authorization?.split(' ')[1];
@@ -152,6 +163,9 @@ app.get('/frontend', cors(corsOptions), async(req, res) => {
       }
 });
 
+/*
+heatlh endpoint, needed for AWS ECS health checks
+*/
 app.get('/health', (req, res) => {
     res.status(200).send({ status: 'Healthy' });
 });

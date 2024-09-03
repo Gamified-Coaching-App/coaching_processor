@@ -1,5 +1,9 @@
 import { UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 
+/* 
+function to write subjective parameters to the database by processing session id, which is workout specific and 
+add this value to the corresponding training day (@timestampLocal)
+*/
 async function writeSubjectiveParamsToDb(dynamoDbClient, params) {
     const { userId, timestampLocal, sessionId, perceivedExertion, perceivedRecovery, perceivedTrainingSuccess } = params;
 

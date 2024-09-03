@@ -1,6 +1,9 @@
 import { BatchGetItemCommand } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 
+/* 
+function to read training plans from database for a list of users and format it for sending it back to frontend
+*/
 async function getTrainingPlan(dynamoDbClient, userIds) {
     const keys = userIds.map(userId => ({
       userId: { S: userId }
@@ -37,7 +40,10 @@ async function getTrainingPlan(dynamoDbClient, userIds) {
     return results;
   }
   
-  function processTrainingPlan(items) {
+/* 
+helper function to process training plan for one userId
+*/
+function processTrainingPlan(items) {
     const baseDate = new Date(items.dateDay1);
     const trainingPlan = {};
 

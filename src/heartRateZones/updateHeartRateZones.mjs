@@ -1,6 +1,9 @@
 import { UpdateItemCommand, BatchGetItemCommand, QueryCommand} from "@aws-sdk/client-dynamodb";
 import dayjs from 'dayjs';
 
+/* 
+function to update heart rate zone values based on users' age (age -> max heart rate -> zones)
+*/
 async function updateHeartRateZones(dynamoDbClient, userIds) {
     let userData, healthData;
 
@@ -57,7 +60,10 @@ async function updateHeartRateZones(dynamoDbClient, userIds) {
         return;
     }
 }
-    
+
+/* 
+function to compute heart rate zones based on max heart rate
+*/  
 function computeHeartRateZones(maxHR) {
     const zone12 = 0.65;
     const zone23 = 0.75;

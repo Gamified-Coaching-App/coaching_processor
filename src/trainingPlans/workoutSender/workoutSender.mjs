@@ -4,7 +4,10 @@ import crypto from 'crypto';
 import moment from 'moment';
 import { BatchGetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
-
+/* 
+helper function to create workout for a user in GarminConnect based on a formatted @workoutString and Garmin specific 
+@userAccessToken and @userAccessTokenSecret - both are oAuth parametes
+*/
 async function createWorkout({ userAccessToken, userAccessTokenSecret, workoutString }) {
     const url = 'https://apis.garmin.com/training-api/workout';
     const method = 'POST';
@@ -31,6 +34,10 @@ async function createWorkout({ userAccessToken, userAccessTokenSecret, workoutSt
     }
 }
 
+/* 
+helper function to delete workout for a user in GarminConnect based on a @workoutId and Garmin specific 
+@userAccessToken and @userAccessTokenSecret - both are oAuth parametes
+*/
 async function deleteWorkout({ userAccessToken, userAccessTokenSecret, workoutId }) {
     const url = 'https://apis.garmin.com/training-api/workout/' + workoutId;
     const method = 'DELETE';
@@ -51,6 +58,11 @@ async function deleteWorkout({ userAccessToken, userAccessTokenSecret, workoutId
     }
 }
 
+/* 
+helper function to create workout schedule (= schedule a defined workout for a specific date) for a user in GarminConnect 
+based on a @workoutId for the previously defined workout, a @timestampLocal for when to schedule as well as Garmin specific 
+@userAccessToken and @userAccessTokenSecret - both are oAuth parametes
+*/
 async function createSchedule({ userAccessToken, userAccessTokenSecret, workoutId , timestampLocal}) {
     console.log("Creating schedule with userAccessToken:", userAccessToken, "and userAccessTokenSecret:", userAccessTokenSecret, "for workoutId:", workoutId, "and timestamp:", timestampLocal);
     const url = 'https://apis.garmin.com/training-api/schedule';
@@ -81,6 +93,11 @@ async function createSchedule({ userAccessToken, userAccessTokenSecret, workoutI
     }
 }
 
+/* 
+helper function to delete workout schedule (= schedule a defined workout for a specific date) for a user in GarminConnect 
+based on a @scheduleId for the previously defined workout schedule and Garmin specific 
+@userAccessToken and @userAccessTokenSecret - both are oAuth parametes
+*/
 async function deleteSchedule({ userAccessToken, userAccessTokenSecret, scheduleId }) {
     const url = 'https://apis.garmin.com/training-api/schedule/' + scheduleId;
     const method = 'DELETE';
@@ -112,6 +129,9 @@ const oauth = OAuth({
     }
 });
 
+/* 
+helper function to generate oAuth signature, which is required from Garmin to authenticate requests on users' behalf
+*/
 function generateOAuthSignature({ url, userAccessToken, userAccessTokenSecret, method }) {
     const requestData = {
         url: url,
@@ -125,6 +145,10 @@ function generateOAuthSignature({ url, userAccessToken, userAccessTokenSecret, m
     return authHeader["Authorization"];
 }
 
+/* 
+helper function to get saved Garmin @userAccessToken and @userAccessTokenSecret from the Partner Data microservice. 
+Required for generating oAuth signature for managing user's workouts on GarminConnect
+*/
 async function getPartnerData(userIds) {
     const userIdsString = userIds.join(',');
     const url = `https://f53aet9v26.execute-api.eu-west-2.amazonaws.com/dev_1/get-partners-data?userIds=${userIdsString}`;
@@ -143,6 +167,9 @@ async function getPartnerData(userIds) {
     }
 }
 
+/* 
+function to create workouts and workout schedules on GarminConnect
+*/
 async function sendWorkouts(userDataInput) {
     const userIds = userDataInput.map(userData => userData.userId);
     const partnerData = await getPartnerData(userIds);
@@ -180,6 +207,9 @@ async function sendWorkouts(userDataInput) {
     return responses;
 }
 
+/* 
+function to delete existing workouts and schedules to enable subsequent insertion of new workouts
+*/
 async function deleteWorkouts(userIdData) {
     const userIds = userIdData.map(userData => userData.userId);
     const partnerData = await getPartnerData(userIds);
@@ -224,6 +254,10 @@ async function deleteWorkouts(userIdData) {
     return responses;
 }
 
+/* 
+function to get heart rate zone thresholds for user, convert workout string to Garmin format, delete existing workouts and schedules on 
+Garmin Connect and push new workouts and schedules to GarminConnect
+*/
 async function pushWorkoutsToPartners(dynamoDbClient, trainingPlans, nonActiveUsers, timestamp) {
     const userData = [];
     const userIds = trainingPlans.map(plan => plan.userId);
@@ -266,6 +300,10 @@ async function pushWorkoutsToPartners(dynamoDbClient, trainingPlans, nonActiveUs
     await updatePartnerTracking(dynamoDbClient, response);
 }
 
+/* 
+helper function users' heart rate zones, in order to convert generatic zones descriptions (e.g., Zone 2) 
+to actual numerical heart rate zone thresholds in beats per minute (bpm)
+*/
 async function fetchHeartRateZonesForUsers(dynamoDbClient, allUsers, nonActiveUsers) {
     const heartRateZonesDict = {};
 
@@ -278,6 +316,9 @@ async function fetchHeartRateZonesForUsers(dynamoDbClient, allUsers, nonActiveUs
     return heartRateZonesDict;
 }
 
+/* 
+helper function convert workout string (@session) to a workout in Garmin format based on @heartRateZones
+*/
 function toGarminFormat(session, heartRateZones) {
     const totalKm = getTotalDistance(session);
     const workout = {
@@ -321,6 +362,10 @@ function toGarminFormat(session, heartRateZones) {
     return workout;
 }
 
+
+/* 
+helper function to get total distance for workout, which is a required parameter for GarminConnect
+*/
 function getTotalDistance(session) {
     let totalKm = 0;
     if (session.warmup) {
@@ -345,6 +390,9 @@ function getTotalDistance(session) {
     return totalKm;
 }
 
+/* 
+helper function to convert intervals to Garmin Steps (part of formatting to workouts to Garmin format)
+*/
 function toGarminStep({ segment, heartRateZones, interval, stepOrder }) {
     const zone = Object.keys(segment)[0];
     const zoneLowerKey = "zone" + zone[1] + "Lower";
@@ -368,7 +416,10 @@ function toGarminStep({ segment, heartRateZones, interval, stepOrder }) {
         "targetValueHigh": zoneUpper
     }};
 
-    async function updatePartnerTracking(dynamoDbClient, items) {
+/* 
+helper function to update list of workout ids and schedule ids for users, after having pushed new workouts to Garmin (required for deleting later)
+*/
+async function updatePartnerTracking(dynamoDbClient, items) {
         console.log("Updating partner tracking with items:", items);
         const userWorkoutsMap = {};
     
@@ -401,7 +452,10 @@ function toGarminStep({ segment, heartRateZones, interval, stepOrder }) {
         }
     }
 
-    async function getWorkoutsToDelete(dynamoDbClient, userIds) {
+/* 
+helper function get current workouts to delete before pushing new workouts
+*/
+async function getWorkoutsToDelete(dynamoDbClient, userIds) {
         const keys = userIds.map(userId => ({ userId }));
     
         const params = {

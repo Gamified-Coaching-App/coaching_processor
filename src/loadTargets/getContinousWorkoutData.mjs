@@ -1,6 +1,9 @@
 import moment from 'moment';
 import { QueryCommand } from '@aws-sdk/client-dynamodb';
 
+/* 
+function to get a @days of continous data from the coaching daily log for a list of users, for a specified time period. Needed for load targets inference 
+*/
 async function getContinousWorkoutData(dynamoDbClient, data = { userIds : [], startDate : null, days : 21} ) {
     let { userIds, startDate, days } = data;
     if (days == undefined) {
@@ -60,11 +63,17 @@ async function getContinousWorkoutData(dynamoDbClient, data = { userIds : [], st
     return results;
 }
 
+/* 
+function to round time strings
+*/
 function roundToNearestHour(timeStr) {
     const [hours, minutes, seconds] = timeStr.split(':').map(Number);
     return hours + (minutes >= 30 ? 1 : 0);
 }
 
+/* 
+function to compute average of non-null values for subjective paramaters
+*/
 function averageNonNull(values, defaultValue = -0.1) {
     const validValues = values.filter(v => v !== null && v !== undefined);
     if (validValues.length === 0) return defaultValue;
@@ -72,10 +81,16 @@ function averageNonNull(values, defaultValue = -0.1) {
     return sum / validValues.length;
 }
 
+/* 
+function to parse number
+*/
 function parseNumber(value) {
     return value !== undefined ? parseFloat(value) : 0;
 }
 
+/* 
+function to parse map
+*/
 function parseMap(map) {
     if (!map) return {};
     return Object.keys(map).reduce((acc, key) => {
@@ -84,6 +99,9 @@ function parseMap(map) {
     }, {});
 }
 
+/* 
+function to fill in default values if data is incomplete
+*/
 function fillDefaults(data) {
     return {
         numberSessions: parseNumber(data.numberSessions),

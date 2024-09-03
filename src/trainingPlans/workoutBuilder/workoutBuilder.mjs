@@ -1,6 +1,9 @@
 import { INTERVALS, DEFAULT_WARMUP_KM, DEFAULT_COOL_DOWN_KM } from './config.mjs'
 
-
+/* 
+function to build workouts based on load targets - only done for active users, @nonActiveUsers (i.e., users were coaching feature is set as inactive) 
+are exluded and receive empty training plans
+*/
 export function buildWorkouts(loadTargets, nonActiveUsers) {
     let workouts = [];
     if (loadTargets !== null) {
@@ -15,6 +18,9 @@ export function buildWorkouts(loadTargets, nonActiveUsers) {
     return workouts;
 }
 
+/* 
+helper function to create training plan for one user, based on load target
+*/
 function createTrainingPlanForUser(suggestion, userId) {
     const trainingPlan = {};
 
@@ -55,6 +61,9 @@ function createTrainingPlanForUser(suggestion, userId) {
     return trainingPlan;
 }
 
+/* 
+helper function to add intervals to a user's training plan after warmup and cooldown is added
+*/
 function addIntervalsToTrainingPlan(runningPlan, totalRemainingKm, totalEffortKm, intervalNumber, intensity='Z2', interval='Default') {
     const zoneKey = intensity + interval;
     const effortKey = Object.keys(INTERVALS[zoneKey]['effort'])[0];
@@ -72,6 +81,9 @@ function addIntervalsToTrainingPlan(runningPlan, totalRemainingKm, totalEffortKm
     }
 }
 
+/* 
+helper function to create an empty plan for non active users (i.e., users were coaching feature is set as inactive)
+*/
 function createEmptyPlan(userId) {
     const trainingPlan = {};
 

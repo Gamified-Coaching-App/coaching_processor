@@ -1,6 +1,9 @@
 import { GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { updateHeartRateZones } from "./updateHeartRateZones.mjs";
 
+/* 
+function to read heart rate zone thresholds for a user from the database - needed to compute km per heart rate zone, based on incoming data
+*/
 async function getHeartRateZones(dynamoDbClient, userId) {
     const params = {
         TableName: "coaching_heart_rate_zones",
