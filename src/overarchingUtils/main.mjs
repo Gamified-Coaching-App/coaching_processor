@@ -47,17 +47,14 @@ async function getAllUsers(dynamoDbClient) {
     };
 
     try {
-        // Scan the table
         const data = await dynamoDbClient.send(new ScanCommand(params));
         
-        // Check if Items exist and are not empty
         if (!data.Items || data.Items.length === 0) {
             return { active: [], nonActive: [] };
         }
 
         const items = data.Items.map(item => unmarshall(item));
 
-        // Separate active and non-active user IDs
         const activeUserIds = [];
         const nonActiveUserIds = [];
 

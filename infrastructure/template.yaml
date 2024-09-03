@@ -220,8 +220,8 @@ Resources:
             LogDriver: awslogs
             Options:
               awslogs-group: CoachingProcessor  
-              awslogs-region: eu-west-2  # Use the region where your CloudWatch Logs group is located
-              awslogs-stream-prefix: ecs  # A prefix for the log stream name
+              awslogs-region: eu-west-2  
+              awslogs-stream-prefix: ecs  
     
   CoachingECSService:
     Type: AWS::ECS::Service
@@ -368,7 +368,6 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
 
-  # IAM Role for Lambda
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -399,7 +398,6 @@ Resources:
                   - events:PutEvents
                 Resource: "*"
 
-  # Lambda Function
   TriggerEcsEndpointFunction:
     Type: AWS::Lambda::Function
     DependsOn:
@@ -421,7 +419,6 @@ Resources:
             };
           };
 
-  # EventBridge Rule
   DailyEventRule:
     Type: AWS::Events::Rule
     DependsOn: TriggerEcsEndpointFunction
@@ -431,7 +428,6 @@ Resources:
         - Arn: !GetAtt TriggerEcsEndpointFunction.Arn
           Id: "TriggerEcsEndpointFunction"
 
-  # Permission for EventBridge to invoke Lambda
   LambdaInvokePermission:
     Type: AWS::Lambda::Permission
     DependsOn: DailyEventRule

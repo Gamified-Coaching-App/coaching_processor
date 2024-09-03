@@ -3,7 +3,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 
 async function insertLoadTargetsToDb(dynamoDbClient, { loadTargets, timestamp }) {
     const tableName = 'coaching_load_targets';
-    const dateDay1 = timestamp.slice(0, 10); // Extract the date part from the timestamp
+    const dateDay1 = timestamp.slice(0, 10); 
 
     const updatePromises = Object.keys(loadTargets).map(async (userId) => {
         const user = loadTargets[userId];

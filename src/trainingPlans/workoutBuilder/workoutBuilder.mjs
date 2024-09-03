@@ -1,13 +1,7 @@
 import { INTERVALS, DEFAULT_WARMUP_KM, DEFAULT_COOL_DOWN_KM } from './config.mjs'
 
-/**
- * Creates a 7-day training plan based on the provided load targets.
- *
- * @param {Array} loadTargets - Array of objects, each containing userId and loadTargets for the week.
- * @returns {Array} workouts - Array of objects, each containing userId and the generated training plan.
- */
+
 export function buildWorkouts(loadTargets, nonActiveUsers) {
-    // Iterate through each load target and create a training plan
     let workouts = [];
     if (loadTargets !== null) {
         workouts = Object.keys(loadTargets).map(userId => ({
@@ -21,13 +15,6 @@ export function buildWorkouts(loadTargets, nonActiveUsers) {
     return workouts;
 }
 
-/**
-     * Creates a 7-day training plan based on the provided suggestion.
-     *
-     * @param {Object} suggestion - An object containing the suggested training load in absolute units for each day.
-     * @returns {Object} trainingPlan - An object representing the 7-day training plan. Each day includes a running plan with warmup, 
-     *                                  main intervals, and cooldown, as well as strength training and alternative hours.
-     */
 function createTrainingPlanForUser(suggestion, userId) {
     const trainingPlan = {};
 
@@ -36,7 +23,6 @@ function createTrainingPlanForUser(suggestion, userId) {
         let remainingKm = { value: suggestion[`day${i + 1}`].kmTotal };
 
         if (remainingKm.value > DEFAULT_WARMUP_KM) {
-            // Add warmup and cooldown to the plan
             runningPlan = { 'session_1': { 'warmup': { 'Z2': DEFAULT_WARMUP_KM } } };
             remainingKm.value -= runningPlan['session_1']['warmup']['Z2'];
 
@@ -47,18 +33,14 @@ function createTrainingPlanForUser(suggestion, userId) {
 
             if (remainingKm.value > 0) {
                 runningPlan['session_1']['main'] = {};
-                // Define objects to pass by reference
                 let intervalNumber = { value : 1 };
-                
-                // Add Zone 5 intervals to the plan
+            
                 const kmZone5 = suggestion[`day${i + 1}`].kmZ5;
                 addIntervalsToTrainingPlan(runningPlan, remainingKm, kmZone5, intervalNumber, 'Z5');
 
-                // Add Zone 4 intervals to the plan
                 const kmZone34 = suggestion[`day${i + 1}`].kmZ3Z4;
                 addIntervalsToTrainingPlan(runningPlan, remainingKm, kmZone34, intervalNumber, 'Z4');
 
-                // Add Zone 2 intervals to the plan
                 const kmZone2 = remainingKm.value;
                 addIntervalsToTrainingPlan(runningPlan, remainingKm, kmZone2, intervalNumber, 'Z2');  
             }

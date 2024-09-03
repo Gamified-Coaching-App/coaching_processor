@@ -1,5 +1,5 @@
 export default {
-    rootDir: "../",  // Points to the project root from the jest_config directory
+    rootDir: "../",  
     moduleFileExtensions: ['js', 'json', 'jsx', 'node', 'mjs'],
     transform: {
         '^.+\\.m?js$': 'babel-jest',
@@ -8,11 +8,11 @@ export default {
     globalSetup: './jest_config/jest.setup.mjs',
     globalTeardown: './jest_config/jest.teardown.mjs',
     testMatch: [
-        "__tests__/**/*.[jt]s?(x)",  // Correctly matching JavaScript and TypeScript test files in __tests__ directories
-        "?(*.)+(spec|test).[jt]s?(x)", // Correctly matching spec and test files
-        "**/*.test.mjs" // Add this line to match .mjs test files
+        "__tests__/**/*.[jt]s?(x)", 
+        "?(*.)+(spec|test).[jt]s?(x)", 
+        "**/*.test.mjs" 
     ],
     testPathIgnorePatterns: [
-        "__tests__/setup.mjs"  // Correctly ignoring setup.mjs in the __tests__ directory
+        "__tests__/setup.mjs"  
     ]
 };

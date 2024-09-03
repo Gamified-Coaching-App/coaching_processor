@@ -13,7 +13,6 @@ import { insertTrainingPlansToDb } from './trainingPlans/utils/insertTrainingPla
 import { getTrainingPlan } from './trainingPlans/utils/getTrainingPlan.mjs';
 import { buildWorkouts } from './trainingPlans/workoutBuilder/workoutBuilder.mjs';
 import { pushWorkoutsToPartners } from './trainingPlans/workoutSender/workoutSender.mjs';
-import { getMeanStdv, insertMeanStdvToDb } from './loadTargets/meanStdv.mjs';
 import { getAllUsers, getUserIdFromJwt } from './overarchingUtils/main.mjs';
 
 const dynamoDbClient = new DynamoDBClient({ region: 'eu-west-2' }); 
@@ -153,43 +152,10 @@ app.get('/frontend', cors(corsOptions), async(req, res) => {
       }
 });
 
-app.post('/updatemeanstdv', async(req, res) => {
-    let activeUsers = req.body.userIds;
-    if (activeUsers === undefined) {
-        res.status(400).send({ message: "Missing userIds in request body" });
-        return;
-    }
-    if (activeUsers === "all") {
-        const allUsers = await getAllUsers(dynamoDbClient);
-        activeUsers = allUsers.active;
-        console.log("Update mean stdv for active users: ", activeUsers);
-    }
-    if (!Array.isArray(activeUsers)) {
-        try {
-            activeUsers = JSON.parse(userIds);
-        } catch (e) {
-            res.status(400).send({ message: "userIds must be an array" });
-            return;
-        }
-    }
-    const yesterdayTimestamp = moment().subtract(1, 'days').format('YYYY-MM-DD');
-    const data = await getContinousWorkoutData(dynamoDbClient, { userIds : activeUsers, startDate : yesterdayTimestamp, days : 90 });
-    const meanSdtvPerUser = getMeanStdv(data);
-    const success = await insertMeanStdvToDb(dynamoDbClient, meanSdtvPerUser);
-    if (success) {
-        res.status(200).send({ message: "Processing finished - data available" });
-    }
-    else {
-        res.status(500).send({ message: "Processing finished - error processing data" });
-    }
-});
-
-// Health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).send({ status: 'Healthy' });
 });
 
-// Listen on port 80
 app.listen(80, () => {
     console.log('Server running on port 80');
 });

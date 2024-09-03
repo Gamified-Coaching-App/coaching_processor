@@ -5,7 +5,6 @@ async function updateHeartRateZones(dynamoDbClient, userIds) {
     let userData, healthData;
 
     try {
-        // Retrieve user data
         userData = await dynamoDbClient.send(new BatchGetItemCommand({
             RequestItems: {
                 "coaching_user_data": {
@@ -15,19 +14,17 @@ async function updateHeartRateZones(dynamoDbClient, userIds) {
             }
         }));
 
-        // Get health data for the last 60 timestamps
         const healthDataRequests = userIds.map(userId => (
             dynamoDbClient.send(new QueryCommand({
                 TableName: "coaching_health",
                 KeyConditionExpression: "userId = :userId",
                 ExpressionAttributeValues: { ":userId": { S: String(userId) } },
                 Limit: 60,
-                ScanIndexForward: false // Fetches the most recent 60 entries
+                ScanIndexForward: false 
             }))
         ));
         healthData = await Promise.all(healthDataRequests);
 
-        // Process each user's data
         for (const userId of userIds) {
             const user = userData.Responses["coaching_user_data"].find(item => item.userId.S === String(userId));
             const healthIndex = userIds.indexOf(userId);

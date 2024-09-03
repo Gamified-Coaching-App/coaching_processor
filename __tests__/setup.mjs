@@ -12,7 +12,6 @@ export const client = new DynamoDBClient({
     }
 });
 
-// Table names with descriptive variables
 const dailyLogTableName = "coaching_daily_log";
 const heartRateZonesTableName = "coaching_heart_rate_zones";
 const healthTableName = "coaching_health";
@@ -23,7 +22,6 @@ const coachingPartnerTrackingName = 'coaching_partner_tracking';
 
 export async function setupDynamoDB() {
     await sleep(5000);
-    // Create tables
     const createTableCommands = [
         new CreateTableCommand({
             TableName: dailyLogTableName,
@@ -123,12 +121,10 @@ export async function setupDynamoDB() {
         })
     ];
 
-    // Execute creation commands
     for (let command of createTableCommands) {
         await client.send(command);
     }
 
-    // Insert initial data for heart rate zones
     await client.send(new PutItemCommand({
         TableName: heartRateZonesTableName,
         Item: {
@@ -146,13 +142,12 @@ export async function setupDynamoDB() {
         }
     }));
 
-    // Insert initial health data
     const healthData = Array.from({ length: 6 }, (_, index) => ({
         PutRequest: {
             Item: {
                 userId: { S: "1" },
-                timestampLocal: { S: String(index + 1) },  // Different timestamps
-                maxHeartRate: { N: String(190 - index) },  // Slightly deviating values
+                timestampLocal: { S: String(index + 1) }, 
+                maxHeartRate: { N: String(190 - index) }, 
                 restingHeartRate: { N: String(40 + index) }
             }
         }
@@ -163,7 +158,6 @@ export async function setupDynamoDB() {
         }
     }));
 
-     // Insert initial user data
      const item = {
         userId: { S: "1" },
         timestampLocal: { S: DAY_0},
@@ -190,7 +184,6 @@ export async function setupDynamoDB() {
         console.error("Error inserting initial log item:", error);
     }
 
-    // Insert initial user data
     await client.send(new PutItemCommand({
         TableName: userDataTableName,
         Item: {
@@ -203,22 +196,21 @@ export async function setupDynamoDB() {
         TableName: userDataTableName,
         Item: {
             userId: { S: "2" },
-            dateOfBirth: { S: "1998-08-10" }  // ISO format adjusted from "10. August 1998"
+            dateOfBirth: { S: "1999-08-10" } 
         }
     }));
     await client.send(new PutItemCommand({
         TableName: userDataTableName,
         Item: {
             userId: { S: "a4370654-eedc-4b84-b52f-cb0450020e9c" },
-            dateOfBirth: { S: "1998-08-10" }  // ISO format adjusted from "10. August 1998"
+            dateOfBirth: { S: "1998-08-10" } 
         }
     }));
 
-    // Insert initial load targets data
     let updateParams = {
         TableName: loadTargetsTableName,
         Key: {
-            "userId": { S: "1" }  // Assuming 'userId' is the only key
+            "userId": { S: "1" } 
         },
         UpdateExpression: "set #day1 = :day1, #day2 = :day2, #day3 = :day3, #day4 = :day4, #day5 = :day5, #day6 = :day6, #day7 = :day7",
         ExpressionAttributeNames: {
@@ -297,11 +289,10 @@ export async function setupDynamoDB() {
         console.error("Error updating load targets:", error);
     }
 
-    // Insert initial training plans data (empty for now)
     updateParams = {
         TableName: trainingPlansTableName,
         Key: {
-            "userId": { S: "1" }  // Assuming 'userId' is the only key
+            "userId": { S: "1" } 
         },
         UpdateExpression: "set #day1 = :day1, #day2 = :day2, #day3 = :day3, #day4 = :day4, #day5 = :day5, #day6 = :day6, #day7 = :day7",
         ExpressionAttributeNames: {
@@ -333,7 +324,6 @@ export async function setupDynamoDB() {
 }
 
 export async function teardownDynamoDB() {
-    // Delete all tables
     const tableNames = [dailyLogTableName, heartRateZonesTableName, healthTableName, userDataTableName, loadTargetsTableName, trainingPlansTableName];
     for (let tableName of tableNames) {
         await client.send(new DeleteTableCommand({ TableName: tableName }));
@@ -347,12 +337,10 @@ function sleep(ms) {
 export function transformDynamoDBItem(item) {
     const transformed = {};
 
-    // Iterate over each key in the item object
     for (const key in item) {
         if (!item.hasOwnProperty(key)) continue;
         const value = item[key];
 
-        // Check the type of the DynamoDB attribute and convert accordingly
         if ('S' in value) {
             transformed[key] = value.S;
         } else if ('N' in value) {

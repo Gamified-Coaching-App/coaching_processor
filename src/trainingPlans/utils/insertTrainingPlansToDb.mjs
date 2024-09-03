@@ -3,7 +3,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 
 async function insertTrainingPlansToDb(dynamoDbClient, { trainingPlans, timestamp }) {
     const tableName = 'coaching_training_plans';
-    const dateDay1 = timestamp.slice(0, 10); // Extract the date part from the timestamp
+    const dateDay1 = timestamp.slice(0, 10);
   
     const updatePromises = trainingPlans.map(async (userPlan) => {
       const { userId, trainingPlan } = userPlan;

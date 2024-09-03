@@ -22,7 +22,7 @@ async function getLoadTargetInference(data) {
         console.log("Inference from load optimiser successfull");
         
         return {
-            loadTargets: result,  // Assuming 'result' is the correct variable
+            loadTargets: result, 
             timestamp: moment().format('YYYY-MM-DD-HH-mm-ss')
         };
     } catch (error) {

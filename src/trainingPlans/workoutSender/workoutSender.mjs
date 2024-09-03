@@ -144,7 +144,7 @@ async function getPartnerData(userIds) {
 }
 
 async function sendWorkouts(userDataInput) {
-    const userIds = userDataInput.map(userData => userData.userId); // Extract user IDs
+    const userIds = userDataInput.map(userData => userData.userId);
     const partnerData = await getPartnerData(userIds);
 
     let responses = [];
@@ -181,7 +181,7 @@ async function sendWorkouts(userDataInput) {
 }
 
 async function deleteWorkouts(userIdData) {
-    const userIds = userIdData.map(userData => userData.userId); // Extract user IDs
+    const userIds = userIdData.map(userData => userData.userId);
     const partnerData = await getPartnerData(userIds);
     let responses = [];
 
@@ -224,21 +224,6 @@ async function deleteWorkouts(userIdData) {
     return responses;
 }
 
-/* 
-@param trainingPlans: Array of objects with the following structure:
-    [
-        {"userId":"1",
-        "trainingPlan":{
-            "day1":{"running":{"session_1":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},"strength":0,"alternative":0},
-            ...
-            "day7":{"running":{"session_1":{"warmup":{"Z2":1.5},"main":{"interval_1":[{"Z5":1},{"Z2":1}]},"cooldown":{"Z2":1.5}}},"strength":0,"alternative":0}}},
-        {"userId":"2",
-            "trainingPlan": ...
-    }]
-@param nonActiveUsers: Array of user IDs of non-active users
-@param timestamp: Timestamp for day1 of the training plans
-
- */
 async function pushWorkoutsToPartners(dynamoDbClient, trainingPlans, nonActiveUsers, timestamp) {
     const userData = [];
     const userIds = trainingPlans.map(plan => plan.userId);
@@ -253,25 +238,19 @@ async function pushWorkoutsToPartners(dynamoDbClient, trainingPlans, nonActiveUs
     }
     const heartRateZonesDict = await fetchHeartRateZonesForUsers(dynamoDbClient, userIds, nonActiveUsers);
 
-    // Loop through each user in the training plans
     for (const { userId, trainingPlan } of trainingPlans) {
         if (nonActiveUsers.includes(userId)) continue;
 
-        // Initialize the start date
         console.log("Timestamp:", timestamp.slice(0, 10));
         let currentDate = moment(new Date(timestamp.slice(0,10)).toISOString());
 
-        // Loop through each day in the training plan
         for (const day of Object.keys(trainingPlan)) {
             const dayData = trainingPlan[day];
 
-            // Check if there is a running session for the day
             if (dayData.running !== 0) {
-                // Loop through each session in running
                 for (const sessionKey of Object.keys(dayData.running)) {
                     const session = dayData.running[sessionKey];
 
-                    // Push the session data to userData array
                     userData.push({
                         userId: userId,
                         workout: toGarminFormat(session, heartRateZonesDict[userId]),
@@ -299,27 +278,6 @@ async function fetchHeartRateZonesForUsers(dynamoDbClient, allUsers, nonActiveUs
     return heartRateZonesDict;
 }
 
-/*
-@param session: Object with the following structure:
-    {
-        "warmup": {"Z2": 1.5},
-        "main": {"interval_1": [{"Z5": 1}, {"Z2": 1}]},
-        "cooldown": {"Z2": 1.5}
-    }
-@param heartRateZones: Object containing the heart rate zones for the user with the following structure 
-    {
-        zone1Lower: 0,
-        zone1Upper: 127,
-        zone2Lower: 127,
-        zone2Upper: 146,
-        zone3Lower: 146,
-        zone3Upper: 166,
-        zone4Lower: 166,
-        zone4Upper: 176,
-        zone5Lower: 176,
-        zone5Upper: 195
-    }
-*/
 function toGarminFormat(session, heartRateZones) {
     const totalKm = getTotalDistance(session);
     const workout = {
@@ -333,14 +291,12 @@ function toGarminFormat(session, heartRateZones) {
 
     let stepOrder = 1;
 
-    // Add warmup steps
     if (session.warmup) {
         workout.steps.push(toGarminStep({ segment: session.warmup, heartRateZones: heartRateZones, interval: "WARMUP", stepOrder }));
         stepOrder++;
         stepOrder++;
     }
 
-    // Add main interval steps wrapped in WorkoutRepeatStep
     if (session.main && Object.keys(session.main).length > 0) {
         const repeatSteps = [];
         for (const interval in session.main) {
@@ -358,7 +314,6 @@ function toGarminFormat(session, heartRateZones) {
         });
     }
 
-    // Add cooldown steps
     if (session.cooldown && Object.keys(session.cooldown).length > 0) {
         workout.steps.push(toGarminStep({ segment: session.cooldown, heartRateZones: heartRateZones, interval: "COOLDOWN", stepOrder }));
     }
@@ -417,7 +372,6 @@ function toGarminStep({ segment, heartRateZones, interval, stepOrder }) {
         console.log("Updating partner tracking with items:", items);
         const userWorkoutsMap = {};
     
-        // Group workouts by userId
         items.forEach(item => {
             const { userId, workoutId, scheduleId } = item;
             if (!userWorkoutsMap[userId]) {
@@ -426,7 +380,6 @@ function toGarminStep({ segment, heartRateZones, interval, stepOrder }) {
             userWorkoutsMap[userId].push({ workoutId, scheduleId });
         });
     
-        // Insert each userId with their workouts into the DynamoDB table
         for (const userId in userWorkoutsMap) {
             const workouts = JSON.stringify(userWorkoutsMap[userId]);
     
@@ -449,10 +402,8 @@ function toGarminStep({ segment, heartRateZones, interval, stepOrder }) {
     }
 
     async function getWorkoutsToDelete(dynamoDbClient, userIds) {
-        // Prepare keys for batch get operation
         const keys = userIds.map(userId => ({ userId }));
     
-        // Batch get parameters
         const params = {
             RequestItems: {
                 'coaching_partner_tracking': {
@@ -467,12 +418,10 @@ function toGarminStep({ segment, heartRateZones, interval, stepOrder }) {
     
             const workoutsToDelete = [];
     
-            // Format the data as required
             items.forEach(item => {
                 const { userId, workouts } = item;
                 let workoutArray;
     
-                // Check if workouts is a string or object
                 if (typeof workouts === 'string') {
                     workoutArray = JSON.parse(workouts);
                 } else {

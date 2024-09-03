@@ -26,7 +26,6 @@ async function getTrainingPlan(dynamoDbClient, userIds) {
       throw new Error('Error fetching workout plans');
     }
   
-    // Process each user's training plan
     const results = data.Responses['coaching_training_plans'].map(item => {
         const unmarshalledItem = unmarshall(item);
         return {
